@@ -185,3 +185,47 @@ fn capture_and_captured_start_refuse_closed_admission_without_records() {
     assert!(context.state.lock().unwrap().records.is_empty());
     assert!(context.dispatch.lock().unwrap().is_empty());
 }
+
+// Private composition fixture; ordinary standalone runs use synthetic values.
+// No core dependency, fixture file or production API is introduced.
+#[test]
+fn composition_request_validator_fixture() {
+    let hex = std::env::var("GWZ_SSPI_TEST_COMPOSITION_CBT").ok();
+    let bindings = match hex {
+        Some(hex) => {
+            assert!(hex.len() <= 170 && hex.len().is_multiple_of(2));
+            vec![
+                hex.as_bytes()
+                    .chunks_exact(2)
+                    .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+                    .collect::<Vec<_>>(),
+            ]
+        }
+        None => [32, 48, 64]
+            .map(|length| {
+                let mut binding = b"tls-server-end-point:".to_vec();
+                binding.extend(vec![0x41; length]);
+                binding
+            })
+            .to_vec(),
+    };
+    for binding in bindings {
+        let request = AuthRequest {
+            package: Package::Ntlm,
+            target: crate::SecretText::new("HTTP/localhost").unwrap(),
+            identity: Identity::CurrentLogon,
+            channel_binding: SecretBytes::new(&binding),
+            token_limit: crate::TokenLimit::new(1024).unwrap(),
+            digest: None,
+        };
+        let accepted = crate::protocol::supervision::validate_request(&request).is_ok();
+        if std::env::var_os("GWZ_SSPI_TEST_COMPOSITION_CBT").is_some() {
+            println!(
+                "gwz-sspi-private-validator:{}",
+                if accepted { "admit" } else { "refuse" }
+            );
+        } else {
+            assert!(accepted);
+        }
+    }
+}

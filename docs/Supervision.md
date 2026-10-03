@@ -190,3 +190,30 @@ composition keeps the one positive logical Open deadline through discovery,
 helpers and every native round; zero refuses native Begin. Nonempty initial
 Negotiate/NTLM offers and Digest are refused before Begin because this serial
 API cannot consume their initial challenge via `step(None)`.
+
+The disposal operations have these signatures: `Conversation::cancel(self) ->
+CancellationReceipt`, `Supervisor::cleanup_status(&self, RecordId) -> CleanupStatus`,
+and `Supervisor::shutdown(&self, Deadline) -> impl Future<Output = ShutdownReport>
++ Send + 'static`. `CancellationReceipt` exposes `record_id: RecordId` and
+`cleanup: CleanupStatus`; `ShutdownReport` exposes `confirmed: usize` (the lifetime
+confirmed count) and `outstanding: Vec<RecordId>`. Cancel is synchronous; shutdown
+has a separate immutable bound. This recipe preserves the receipt for accounting:
+
+```rust
+use gwz_sspi::{CancellationReceipt, CleanupStatus, Conversation, Deadline,
+               ShutdownReport, Supervisor};
+async fn cancel_and_account(
+    supervisor: &Supervisor, conversation: Conversation, shutdown_deadline: Deadline,
+) -> (CancellationReceipt, CleanupStatus, ShutdownReport) {
+    let receipt = conversation.cancel();
+    let observed = supervisor.cleanup_status(receipt.record_id.clone());
+    let report = supervisor.shutdown(shutdown_deadline).await;
+    (receipt, observed, report)
+}
+```
+
+Neither Pending nor Unknown permits release of a retained owner. The returned
+shutdown report lists records whose cleanup is still unconfirmed at that bound;
+its outstanding list may be nonempty. Dropping the shutdown future retains
+supervision. An evicted tombstone can become Unknown even after earlier confirmation,
+so a host must retain its own previously observed proof rather than invent it.
