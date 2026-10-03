@@ -11,10 +11,10 @@ pub(crate) struct Primary {
 pub(super) trait Origin: Send {
     fn verify(&self) -> Result<(), Error>;
 }
-pub(super) trait ReadPort: Send {
+pub(crate) trait ReadPort: Send {
     fn read(&mut self, bytes: &mut [u8]) -> Result<usize, Error>;
 }
-pub(super) trait WritePort: Send {
+pub(crate) trait WritePort: Send {
     fn write(&mut self, bytes: &[u8]) -> Result<usize, Error>;
 }
 pub(super) trait Child: Send + Sync {

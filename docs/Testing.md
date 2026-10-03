@@ -2,12 +2,12 @@
 
 | Tier | Command | Scope |
 |---|---|---|
-| Fast | cargo test --lib --locked | Pure codec, parent kernel/context/futures, fake partial ports and wipe audit; no process/sleep/service. |
+| Fast | cargo test --lib --locked | Codec, parent kernel/context/futures, serial worker/native bridge, fake partial ports and wipe audit; no process/thread/sleep/service. |
 | Caller | cargo test --test caller_values --locked | Checked TokenLimit and borrowed-source ownership. |
-| Full | cargo test --all-features --locked | Fast/caller tests, 16 negative Clone/Debug doctests, compiled caller walkthrough and bootstrap refusal. |
+| Full | cargo test --all-features --locked | Fast/caller tests, negative Clone/Debug doctests, compiled caller/early-dispatch walkthroughs and silent bootstrap refusal. |
 | Schema | python -B -m unittest discover -s tests/schema -v | 13 pinned-taut/tooling/cap-model tests; synthetic data only. |
-| Bootstrap | cargo test --locked --features worker-bin --test worker_bootstrap | Real child process; fixed refusal with no argument echo. |
-| Native Windows | Future opt-in targets under tests/native/windows | No native qualification is implemented. Platform compilation is not qualification. |
+| Bootstrap | cargo test --locked --features worker-bin --test worker_bootstrap | Real child process; silent malformed/metadata refusal with no argument echo. |
+| Native Windows | See NativeFixtures.md; ignored unit and native_worker targets | Opt-in production Windows owner/process/provider fixtures, no server. Platform compilation is not execution or full qualification. |
 
 The fast suite uses 14 independently generated pinned-taut reference vectors
 covering all seven message bodies, CurrentLogon/Explicit/Digest identities,
@@ -36,9 +36,10 @@ provider disposal, process termination erasure, or caller-source wiping.
 
 Parent conversation phase/allowed kind, Error.phase, immutable deadlines, terminal
 publication arbitration and registration/capacity retention are now tested with
-private fake ports/clock. Native provider UTF-16 buffers and Windows runtime
-process/Job/thread disposal qualification remain later gates. Codec context alone
-is not a live state machine. The worker still refuses all invocations.
+private fake ports/clock. Native provider UTF-16 buffers and Windows process/Job disposal have opt-in
+fixtures; complete runtime/provider qualification remains a separate gate. Codec context alone
+is not a live state machine. The matching worker now runs the shared serial native entry; absent/malformed
+compile-time metadata still refuses.
 
 Generation requires taut-proto==0.10.0 and the exact Rust 1.95 rustfmt named in
 protocol/generator.json. Check both authored IR/fingerprints and Rust projection:
@@ -131,3 +132,51 @@ remain deferred qualification; fake completion outcomes are not native evidence.
 The trusted-host packaging construction and owned-future handoff walkthrough
 compiles in Rustdoc. Its build_fingerprint is explicit synthetic metadata whose
 production producer remains step 4; there is no invented runtime hash derivation.
+
+
+## Serial native worker checkpoint
+
+Meaningful initial RED: the production worker bridge returned Protocol for both
+legal pre-Begin Finish and clean EOF (two failing tests). Both pass after the
+serial phase/ownership bridge implementation. Later fixture-name typos were test
+harness errors, not claimed native RED evidence. The worker fake suite exercises
+that same production bridge with explicit private Provider/Session/Output ports,
+no processes/threads/sleeps or public fake injection. Initial default and Unicode
+explicit identity, Hello-before-native, strict package cap before acquisition,
+all four supported ISC statuses/Complete branches, unknown statuses, unavailable
+or incompatible mechanism observations, every acquisition/init/completion/query/
+output-free/cleanup error, empty and bound±1 output, exact challenge correlation,
+Complete-only Finish and round-8 Continue refusal are covered. Digest cap/profile
+validation is followed by ProviderRejected with zero acquisition/context calls,
+reflecting the documented missing H(Entity) contract input.
+
+Private per-instance probes attach to the actual owned worker input/output frames,
+request fields, challenge/token copies and fake provider output. They inspect live
+initialized storage after wiping and before release, including partial/error
+paths and retained owners. Portable fixed aligned UTF-16 and CBT tests cover
+Unicode code-unit lengths and the whole padded allocation; Windows native owner
+fixtures additionally inspect actual provider bytes before checked free. Caller
+borrowed source wiping remains independent. No callback/global/freed-memory read
+or physical-erasure claim exists.
+
+Every truncation of the worker Begin/Finish input stream and every outbound byte
+offset failure is exercised through actual framing and serial cleanup. Seeded
+worker schedules use 1, 0x649f109d, 0xda26cb46 and u64::MAX, 64 cases each, varying
+round count, explicit/default identity, partial read/write chunks and native
+failure point. Failures print seed/case/chunks/rounds/fault and nonsecret action
+trace. Pure parent schedules and fake completion outcomes remain distinct from
+native evidence.
+
+Public early-dispatch tests check malformed/overflow/equal/signed handles, no
+argument echo, no runtime metadata activation, platform refusal and Send/Sync.
+The minimal binary unit test checks missing/malformed/exact compile-time metadata
+parsing without source mutation. WorkerBootstrap negative trait doctests and the
+compiled trusted fingerprint early handoff are part of full cargo test.
+
+Use NativeFixtures.md for the ignored production process/native owner rows. Their
+inputs, trusted compile-time fingerprint and CBT are synthetic; initial NTLM tokens
+stay local. Cross-target checks inspect both Windows branches, but neither those
+checks nor fake output prove completed NTLM/Kerberos, actual completion-status
+provider reachability, TLS/EPA, real blocked providers, Digest, HTTP/Git success
+or installed host provenance. Digest and host packaging producer remain open;
+this checkpoint does not close all plan step 3 or qualify Windows activation.

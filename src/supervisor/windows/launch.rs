@@ -5,7 +5,7 @@ use super::super::super::{
 };
 use super::{
     attributes::Attributes,
-    handles::{Handle, Input, Output, child},
+    handles::{Handle, Input, Output, Process},
 };
 use crate::{Error, ErrorKind};
 use std::os::windows::ffi::OsStrExt;
@@ -88,10 +88,28 @@ fn environment(windows: &[u16], system: &[u16]) -> Vec<u16> {
     result.push(0);
     result
 }
+pub(super) struct OwnedLaunch {
+    pub(super) process: Process,
+    pub(super) reader: Input,
+    pub(super) writer: Output,
+    pub(super) contained: bool,
+}
 pub(super) fn create(
     executable: &WorkerExecutable,
     origin: Box<dyn Origin>,
 ) -> Result<Launched, Error> {
+    let result = create_owned(executable, origin)?;
+    Ok(Launched {
+        child: std::sync::Arc::new(result.process),
+        reader: Box::new(result.reader),
+        writer: Box::new(result.writer),
+        contained: result.contained,
+    })
+}
+pub(super) fn create_owned(
+    executable: &WorkerExecutable,
+    origin: Box<dyn Origin>,
+) -> Result<OwnedLaunch, Error> {
     // SAFETY: unnamed noninheritable Job; sole owned handle returned on success.
     let job = Handle::new(unsafe { CreateJobObjectW(std::ptr::null(), std::ptr::null()) })?;
     let mut limits = JOBOBJECT_EXTENDED_LIMIT_INFORMATION::default();
@@ -202,10 +220,14 @@ pub(super) fn create(
     // SAFETY: held process/Job; check occurs before resume, with no fallback.
     let contained =
         unsafe { IsProcessInJob(process_handle.0, job.0, &mut member) } != 0 && member != 0;
-    Ok(Launched {
-        child: child(process_handle, thread_handle, job),
-        reader: Box::new(Input(parent_output)),
-        writer: Box::new(Output(parent_input)),
+    Ok(OwnedLaunch {
+        process: Process {
+            process: process_handle,
+            thread: thread_handle,
+            job,
+        },
+        reader: Input(parent_output),
+        writer: Output(parent_input),
         contained,
     })
 }

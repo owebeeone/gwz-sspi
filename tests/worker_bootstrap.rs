@@ -3,7 +3,7 @@
 use std::process::Command;
 
 #[test]
-fn unfinished_worker_refuses_without_echoing_supplied_arguments() {
+fn malformed_worker_refuses_silently_without_echoing_supplied_arguments() {
     let output = Command::new(env!("CARGO_BIN_EXE_gwz-sspi-worker"))
         .arg("synthetic-sensitive-argument-not-for-logging")
         .output()
@@ -13,5 +13,17 @@ fn unfinished_worker_refuses_without_echoing_supplied_arguments() {
         output.stdout.is_empty(),
         "worker must emit no protocol token"
     );
-    assert_eq!(output.stderr, b"gwz-sspi worker is not implemented\n");
+    assert!(output.stderr.is_empty());
+}
+
+#[test]
+fn runtime_metadata_cannot_activate_an_unpackaged_or_invalid_bootstrap() {
+    let output = Command::new(env!("CARGO_BIN_EXE_gwz-sspi-worker"))
+        .env("GWZ_SSPI_BUILD_FINGERPRINT", "42".repeat(32))
+        .args(["--gwz-sspi-worker", "0", "1"])
+        .output()
+        .expect("worker launches");
+    assert_eq!(output.status.code(), Some(2));
+    assert!(output.stdout.is_empty());
+    assert!(output.stderr.is_empty());
 }

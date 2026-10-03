@@ -31,3 +31,13 @@ pub(in crate::supervisor) fn system() -> Result<Arc<dyn Platform>, Error> {
         primary: Arc::new(identity::primary()?),
     }))
 }
+
+mod inherited;
+pub(crate) fn worker_parts(input: usize, output: usize) -> Result<inherited::Parts, Error> {
+    inherited::adopt(input, output)
+}
+#[cfg(test)]
+mod native {
+    use super::*;
+    include!("native_tests.rs");
+}

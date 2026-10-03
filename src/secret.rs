@@ -3,10 +3,12 @@ use zeroize::{Zeroize, Zeroizing};
 
 #[cfg(not(test))]
 pub(crate) mod audit {
-    #[derive(Default)]
+    #[derive(Default, Clone)]
     pub(crate) struct Probe {}
     impl Probe {
         pub(crate) fn observe(&self, _: &[u8]) {}
+        pub(crate) fn words16(&self, _: &[u16]) {}
+        pub(crate) fn words32(&self, _: &[u32]) {}
     }
 }
 
@@ -100,6 +102,17 @@ pub(crate) mod audit {
     #[derive(Default, Clone)]
     pub(crate) struct Probe(pub(crate) Option<Events>);
     impl Probe {
+        pub(crate) fn words16(&self, words: &[u16]) {
+            self.record(words.len() * 2, words.iter().all(|w| *w == 0));
+        }
+        pub(crate) fn words32(&self, words: &[u32]) {
+            self.record(words.len() * 4, words.iter().all(|w| *w == 0));
+        }
+        fn record(&self, length: usize, zero: bool) {
+            if let Some(events) = &self.0 {
+                events.lock().expect("audit mutex").push((length, zero));
+            }
+        }
         pub(crate) fn observe(&self, bytes: &[u8]) {
             if let Some(events) = &self.0 {
                 events

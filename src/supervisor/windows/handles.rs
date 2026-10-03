@@ -1,9 +1,10 @@
 use super::super::super::ports::{Child, ReadPort, WritePort};
 use crate::{Error, ErrorKind};
 use std::os::windows::io::AsRawHandle;
-use std::sync::Arc;
 use std::thread::JoinHandle;
-use windows_sys::Win32::Foundation::{CloseHandle, HANDLE, INVALID_HANDLE_VALUE, WAIT_OBJECT_0};
+use windows_sys::Win32::Foundation::{
+    CloseHandle, ERROR_BROKEN_PIPE, GetLastError, HANDLE, INVALID_HANDLE_VALUE, WAIT_OBJECT_0,
+};
 use windows_sys::Win32::Storage::FileSystem::{ReadFile, WriteFile};
 use windows_sys::Win32::System::IO::CancelSynchronousIo;
 use windows_sys::Win32::System::JobObjects::{
@@ -95,6 +96,10 @@ impl ReadPort for Input {
             )
         };
         if success == 0 {
+            // SAFETY: immediate error observation for the synchronous read.
+            if unsafe { GetLastError() } == ERROR_BROKEN_PIPE {
+                return Ok(0);
+            }
             return Err(Error::new(ErrorKind::Protocol));
         }
         Ok(count as usize)
@@ -118,11 +123,4 @@ impl WritePort for Output {
         }
         Ok(count as usize)
     }
-}
-pub(super) fn child(process: Handle, thread: Handle, job: Handle) -> Arc<dyn Child> {
-    Arc::new(Process {
-        process,
-        thread,
-        job,
-    })
 }

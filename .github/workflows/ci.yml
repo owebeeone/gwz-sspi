@@ -3,11 +3,16 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+    inputs:
+      native_fixtures:
+        description: Run opt-in self-contained Windows native fixtures
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
   package:
-    name: Build, secret codec and supervision checks (${{ matrix.os }})
+    name: Build, codec, supervision and worker checks (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
@@ -39,7 +44,7 @@ jobs:
         run: cargo clippy --all-targets --all-features --locked -- -D warnings
       - name: Fast library tier
         run: cargo test --lib --locked
-      - name: Caller lifecycle, trait checks and bootstrap refusal
+      - name: Caller lifecycle, early dispatch, traits and bootstrap refusal
         run: cargo test --all-features --locked
       - name: Build standalone crate archive
         run: cargo package --locked
@@ -64,3 +69,30 @@ jobs:
           rustup target add --toolchain 1.95.0 ${{ matrix.target }}
       - name: Strict target inspection without native execution
         run: cargo clippy --all-targets --all-features --locked --target ${{ matrix.target }} -- -D warnings
+
+  native-fixtures:
+    if: github.event_name == 'workflow_dispatch' && inputs.native_fixtures
+    name: Opt-in production Windows fixtures (synthetic metadata)
+    runs-on: windows-2025
+    timeout-minutes: 15
+    env:
+      CARGO_TARGET_DIR: ${{ runner.temp }}/gwz-sspi-native-target
+      GWZ_SSPI_NATIVE_SCRATCH: ${{ runner.temp }}/gwz-sspi-native-scratch
+      GWZ_SSPI_BUILD_FINGERPRINT: '4242424242424242424242424242424242424242424242424242424242424242'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install pinned Rust
+        run: rustup toolchain install 1.95.0 --profile minimal
+      - name: Build production worker with synthetic metadata
+        run: cargo build --features worker-bin --locked
+      - name: Execute opt-in fixtures by normal exit status
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force $env:GWZ_SSPI_NATIVE_SCRATCH | Out-Null
+          $env:GWZ_SSPI_NATIVE_WORKER = (Resolve-Path "$env:CARGO_TARGET_DIR/debug/gwz-sspi-worker.exe").Path
+          cargo test --all-features --locked --test native_worker -- --ignored --test-threads=1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo test --lib --all-features --locked -- --ignored --test-threads=1
+          exit $LASTEXITCODE

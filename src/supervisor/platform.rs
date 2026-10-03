@@ -20,3 +20,8 @@ mod selected {
     pub(in crate::supervisor) use super::windows::system;
 }
 pub(super) use selected::system;
+
+#[cfg(windows)]
+pub(crate) mod worker {
+    pub(crate) use super::windows::worker_parts;
+}

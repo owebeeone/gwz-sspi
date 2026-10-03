@@ -3,7 +3,8 @@
 Role: integration library with owned contract/protocol values and private narrow
 OS, IPC and clock ports. Public types expose no OS handles, core/Git types or
 runtime-specific objects. See CallerValues.md and Supervision.md for the caller
-surface. The production executable still refuses; native provider work is deferred.
+surface and WorkerEntry.md for early dispatch. Native Negotiate/NTLM processing
+is implemented pending native ownership review; Digest remains refused.
 
 Approved dependency allowlist: zeroize =1.9.0, defaults disabled, alloc only;
 target-Windows windows-sys =0.61.2, defaults disabled, and its windows-link =0.2.1
@@ -11,8 +12,10 @@ transitive dependency. The lane owner reviewed released source before addition.
 Allowed Windows features are Win32_Foundation, Win32_Security,
 Win32_Storage_FileSystem, Win32_System_IO, Win32_System_JobObjects,
 Win32_System_Pipes, Win32_System_Threading, Win32_System_SystemInformation and
-Win32_System_SystemServices. No provider binding, runtime, build or dev dependency
-is introduced. Any additional dependency kind requires explicit source review.
+Win32_System_SystemServices; approved native additions are
+Win32_Security_Authentication_Identity, Win32_Security_Credentials and Win32_System_Rpc.
+Rpc supplies only the Unicode identity type/flag, no RPC service operation.
+No runtime, build or dev dependency is introduced. Any additional dependency kind requires explicit source review.
 
 The accepted design is GWZ SSPI revision 2, including its caller-identity rule.
 Workspace development documents are not build/CI dependencies. FFI unsafe code is
@@ -27,7 +30,8 @@ CBOR tree or live-secret reallocation. Schema/IR/WireProtocol/fingerprints are
 unchanged by supervision. The codec checks fingerprint/identity/cap/package/round;
 supervision adds allowed kind, Error.phase and terminal publication eligibility.
 The parent's provider ceiling is the independent absolute 65,536-byte bound, not a
-claim that the parent queried a provider. Native worker narrowing remains step 3.
+claim that the parent queried a provider. The serial worker independently queries and narrows to its provider maximum
+before credential acquisition.
 
 src/supervisor/kernel.rs contains deterministic phase/terminal/proof transitions.
 Context owns a short state Mutex for admission and kernels, context-scoped checked
@@ -57,8 +61,8 @@ current process primary immediately before CreateProcess. Future::poll does no
 metadata/provider/creation/IPC/process wait or join. A refused unregistered start
 or its Drop may synchronously dispose the captured handle outside state locks,
 without a hard OS time bound. Identity scratch is aligned, initialized, fixed and zeroizing; copied
-SID/LUID owners are likewise wiping. No secret UTF-16 conversion is needed in this
-parent phase. Provider/native credential buffers and disposal remain deferred.
+SID/LUID owners are likewise wiping. Parent metadata needs no secret UTF-16 conversion. Worker UTF-16, CBT, provider
+buffers and context/credential disposal now belong to the serial child owner.
 
 Windows creation uses an unnamed KILL_ON_JOB_CLOSE Job, no breakaway, suspended
 STARTUPINFOEX JOB_LIST plus an explicit HANDLE_LIST for exactly the child pipe ends
@@ -79,3 +83,23 @@ iterations around their thread creation/wait loops. The private Owner port holds
 the actual JoinHandle in production and requires actual completion before consuming
 its join; fake owners provide explicit completion/join outcomes only in unit tests.
 There is no public injection, new disposal queue, dependency or native/wire policy.
+
+
+src/protocol/worker_codec.rs projects generated borrowed commands, validates
+phase/profile before native package metadata and owned secret copies, then maps
+narrowly into existing caller values. No wire or generated artifacts change.
+src/worker/session.rs runs one serial phase/native ownership bridge with private
+Provider/Session/Output ports. The Windows adapter retains stable boxed Unicode
+identity and fixed aligned CBT through every call and final handle disposal.
+Provider allocation owners survive ISC and Complete; normal output is capped,
+copied, wiped and checked FreeContextBuffer completes before publication. Queries
+free their allocations; complete Negotiate observation must be authoritative.
+Failed Delete/Free status produces Error, never Finished. EOF normally disposes
+owners but supplies no acknowledgement or parent completion proof. Forced exit
+continues to mean containment only. The minimal executable parses trusted
+compile-time fingerprint metadata without runtime selection/fallback.
+
+Digest is deliberately refused before Acquire/ISC because the accepted request
+lacks Microsoft's H(Entity) input. See WorkerEntry.md; no body-hash substitute or
+wire amendment is introduced. Native fixtures are opt-in and self-contained;
+full native parity/installed host composition remains deferred qualification.

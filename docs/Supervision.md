@@ -1,8 +1,8 @@
 # Parent supervision
 
 The parent lifecycle is implemented for Windows, using the strict private codec.
-The production worker still exits with a fixed refusal; native SSPI and worker_entry
-are deferred. Successful fake tokens do not establish native or HTTP authentication.
+Shared worker_entry and serial Negotiate/NTLM native processing are implemented,
+pending native implementation review. Fake tokens do not establish native or HTTP authentication.
 No runtime, network, core/Git or Python dependency is introduced.
 
 | Public value | Construction or operation |
@@ -60,8 +60,8 @@ its explicitly separate deadline; dropping its future leaves supervision running
 
 The following recipe compiles without an async runtime. A host executor may call
 it on Windows with an already trusted Supervisor and request. It deliberately
-finishes after the first token: an early Finish is legal. The current refusing
-worker produces a Failure rather than the fake success used by unit tests.
+finishes after the first token: an early Finish is legal. A matching trusted worker can produce the initial native token; packaging/refusal
+and provider qualification remain separate from HTTP authentication.
 
 ```rust
 use gwz_sspi::{AuthRequest, Cancellation, Deadline, Failure, Supervisor, TokenStep};
@@ -81,8 +81,8 @@ async fn first_token_then_dispose(
 
 Supervisor and Conversation have neither Clone nor Debug; both are Send. Supervisor
 is Sync. Caller-owned source buffers retain their separate wiping obligation.
-Windows process runtime tests, provider UTF-16/native buffers, installed-worker
-composition and native SSPI qualification are separate future gates.
+Opt-in Windows fixtures exercise process/native cleanup; installed-worker
+composition and complete native/provider qualification remain separate gates.
 
 ## Trusted packaging input and owned handoff
 
@@ -91,7 +91,7 @@ output field `build_fingerprint`. The packaging producer must supply identical
 bytes to the matching worker's Hello. This interface does not prescribe hashing
 an executable at runtime, and there is no exported library constant to substitute
 for trusted host metadata. The actual installation/packaging producer remains
-step 4; the currently refusing worker emits no successful Hello. The host verifies
+step 4; a worker built without valid trusted metadata refuses before Hello. The host verifies
 and installs its matching artifact set together, then passes that trusted metadata
 and its exact absolute worker path to WorkerExecutable::new.
 

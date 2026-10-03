@@ -1,3 +1,5 @@
 # Ownership
 
-Enclosed native Windows module boundary: creation-time Job/HANDLE attachment, SSPI context/storage and private pipe adapters. No native code yet.
+Historical boundary note. Implemented creation-time Job/HANDLE_LIST/private pipes
+live in src/supervisor/windows; serial native SSPI owners live in src/worker/windows.
+See docs/Architecture.md and docs/NativeFixtures.md. No activation or full parity claim.

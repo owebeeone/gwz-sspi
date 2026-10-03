@@ -55,10 +55,10 @@ closed all three P2s and all P3s; no new architectural root cause was found.
 This accepts the parent implementation only. See docs/Supervision.md,
 Architecture.md and Testing.md for precise boundaries.
 
-Next: native worker, CLI/Python composition, installed-worker
-qualification and Windows parity. Native SSPI and worker_entry remain unimplemented. The worker exits with its original fixed refusal. Keep
-publish=false until implementation/qualification and registry/remote setup are
-concrete. No release, tag, push or registry mutation.
+Next: native ownership review, CLI/Python composition, installed-worker
+qualification and Windows parity. Keep publish=false; no release/tag/push or
+registry mutation. The prior fixed refusal is replaced only for valid early
+bootstrap plus trusted compile-time fingerprint metadata, as documented below.
 
 Supervisor remediation 1 addresses filed Code/State P2 findings and the accepted
 Code/State/Surface P3 dispositions in one member patch. Precise owned start/shutdown
@@ -73,3 +73,23 @@ filed in gwz-dev/dev-docs/GwzSspiSupervisor-Review{Code,State,Surface}-1.md
 and GwzSspiSupervisorAcceptance.md. No finding is self-closed; native provider
 work remains the next gated phase. This final status edit changes no executable
 behavior, public API, dependency or fingerprinted artifact.
+
+
+Native Negotiate/NTLM/shared bootstrap checkpoint is implemented, **not accepted**.
+WorkerBootstrap::from_args and worker_entry are public early-dispatch APIs; the
+minimal executable requires strict trusted compile-time packaging metadata with
+no runtime fallback. Actual child primary Hello precedes Begin. Package maximum
+admission, serial credentials/context/status/CompleteAuthToken/negotiation query,
+fixed UTF-16/CBT/provider-buffer ownership, normal cleanup and strict EOF/error
+paths use one production bridge with deterministic fake ports and live wipe
+probes. Three approved windows-sys features were added without new crates.
+Native owner and production process/EOF/Job/parent-loss fixtures are public and
+opt-in; cross-compilation is not execution evidence. See WorkerEntry.md,
+NativeFixtures.md and Testing.md. No finding is self-accepted.
+
+Digest is incomplete and still unavailable before credentials/context work: the
+current accepted request cannot convey Microsoft's H(Entity) input. A subsequent
+reviewed amendment/provider parity is required; this does not close all plan step 3
+or activate any product path. Generated/schema/WireProtocol/fingerprints remain
+unchanged. Trusted packaging production and CLI/core/Python integration are later
+steps, with full Windows qualification and release still gated.

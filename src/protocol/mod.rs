@@ -34,3 +34,5 @@ mod identity_adapter_tests {
 mod supervision_tests {
     include!("supervision_tests.rs");
 }
+
+pub(crate) mod worker_codec;

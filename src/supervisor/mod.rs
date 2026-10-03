@@ -9,7 +9,7 @@ mod io;
 pub(crate) mod kernel;
 mod monitor;
 mod owners;
-mod platform;
+pub(crate) mod platform;
 pub(crate) mod ports;
 mod values;
 pub use api::{Conversation, Supervisor};

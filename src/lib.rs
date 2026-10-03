@@ -1,10 +1,11 @@
 //! Owned caller values for contained Windows SSPI authentication.
 //!
 //! Owned secret values, strict private codec and parent supervision are implemented.
-//! Native provider authentication and Windows runtime qualification remain deferred.
-//! The optional worker executable refuses every invocation.
+//! Shared child bootstrap and serial Windows Negotiate/NTLM processing are implemented.
+//! Native review, host integration and provider qualification remain gated.
 #![doc = include_str!("../docs/CallerValues.md")]
 #![doc = include_str!("../docs/Supervision.md")]
+#![doc = include_str!("../docs/WorkerEntry.md")]
 #![deny(missing_docs)]
 #[allow(dead_code)]
 mod protocol;
@@ -22,3 +23,6 @@ pub use supervisor::{
     Cancellation, CancellationReceipt, CleanupStatus, Conversation, Deadline, Failure, Options,
     RecordId, ShutdownReport, Supervisor, WorkerExecutable,
 };
+
+mod worker;
+pub use worker::{WorkerBootstrap, worker_entry};
