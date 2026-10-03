@@ -3,6 +3,7 @@ mod cbor;
 mod framing;
 mod generated;
 mod profile;
+pub(crate) mod supervision;
 
 #[cfg(test)]
 mod tests {
@@ -27,4 +28,9 @@ mod framing_tests {
 #[cfg(test)]
 mod identity_adapter_tests {
     include!("identity_adapter_tests.rs");
+}
+
+#[cfg(test)]
+mod supervision_tests {
+    include!("supervision_tests.rs");
 }

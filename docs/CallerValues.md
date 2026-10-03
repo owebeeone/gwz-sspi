@@ -1,8 +1,9 @@
 # Implemented caller values
 
 This checkpoint provides owned values; it does not perform authentication.
-Supervisor, Conversation, worker_entry, deadlines, cancellation, capacity and
-cleanup receipts remain unimplemented. The packaged worker refuses every call.
+Parent Supervisor/Conversation, deadlines, cancellation, capacity and cleanup
+receipts are implemented; see Supervision.md. Native SSPI and worker_entry remain
+deferred. The packaged worker refuses every call.
 
 `SecretBytes::new(&[u8]) -> SecretBytes` and
 `SecretText::new(&str) -> Result<SecretText, Error>` allocate zeroed fixed storage
@@ -55,7 +56,7 @@ codec validates structure, fingerprints/primary identity against supplied
 expected values, caps/package/mechanism relations and expected round. It does
 not establish conversation phase, terminal arbitration, native identity, process
 exit, containment or cleanup. Its token projection is a value conversion only;
-a future supervisor must first establish phase and publication eligibility.
+the parent supervisor separately establishes phase and publication eligibility.
 Direct NTLM/Digest use their selected provider; unresolved Continue observations
 require a Negotiate context. Complete requires authoritative Selected.
 

@@ -48,6 +48,14 @@ fn begin_ref(request: &AuthRequest) -> wire::BeginRef<'_> {
         }),
     }
 }
+pub(super) fn validate_request(request: &AuthRequest) -> Result<(), Error> {
+    let value = begin_ref(request);
+    super::profile::begin(&value, None).map_err(|_| Error::new(ErrorKind::InvalidRequest))?;
+    let mut size = super::cbor::Size(0);
+    value
+        .emit(&mut size)
+        .map_err(|_| Error::new(ErrorKind::InvalidRequest))
+}
 pub(super) fn encode_begin(request: &AuthRequest) -> Result<Storage, Error> {
     let envelope = wire::EnvelopeRef {
         version: 1,

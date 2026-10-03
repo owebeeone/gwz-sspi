@@ -7,7 +7,7 @@ permissions:
   contents: read
 jobs:
   package:
-    name: Build and secret codec checks (${{ matrix.os }})
+    name: Build, secret codec and supervision checks (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
@@ -34,12 +34,33 @@ jobs:
       - name: Formatting
         run: |
           cargo fmt --all -- --check
-          rustfmt --edition 2024 --check src/protocol/tests.rs src/protocol/bounds_tests.rs src/protocol/identity_adapter_tests.rs src/protocol/framing_tests.rs
+          python -B scripts/check_rustfmt.py
       - name: Strict lint
         run: cargo clippy --all-targets --all-features --locked -- -D warnings
       - name: Fast library tier
         run: cargo test --lib --locked
-      - name: Caller values, trait checks and bootstrap refusal
+      - name: Caller lifecycle, trait checks and bootstrap refusal
         run: cargo test --all-features --locked
       - name: Build standalone crate archive
         run: cargo package --locked
+
+  windows-cross:
+    name: Windows target inspection (${{ matrix.target }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [x86_64-pc-windows-msvc, x86_64-pc-windows-gnu]
+    timeout-minutes: 15
+    env:
+      CARGO_TARGET_DIR: ${{ runner.temp }}/gwz-sspi-cross-target
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install exact Rust toolchain and target
+        run: |
+          rustup toolchain install 1.95.0 --profile minimal --component clippy
+          rustup target add --toolchain 1.95.0 ${{ matrix.target }}
+      - name: Strict target inspection without native execution
+        run: cargo clippy --all-targets --all-features --locked --target ${{ matrix.target }} -- -D warnings

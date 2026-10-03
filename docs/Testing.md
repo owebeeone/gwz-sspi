@@ -2,9 +2,9 @@
 
 | Tier | Command | Scope |
 |---|---|---|
-| Fast | cargo test --lib --locked | Pure Rust strict codec, borrowed/owned records, bounds, fake partial framing and wipe audit; no process/sleep/service. |
+| Fast | cargo test --lib --locked | Pure codec, parent kernel/context/futures, fake partial ports and wipe audit; no process/sleep/service. |
 | Caller | cargo test --test caller_values --locked | Checked TokenLimit and borrowed-source ownership. |
-| Full | cargo test --all-features --locked | Fast/caller tests, 12 negative Clone/Debug doctests, compiled caller walkthrough and bootstrap refusal. |
+| Full | cargo test --all-features --locked | Fast/caller tests, 16 negative Clone/Debug doctests, compiled caller walkthrough and bootstrap refusal. |
 | Schema | python -B -m unittest discover -s tests/schema -v | 13 pinned-taut/tooling/cap-model tests; synthetic data only. |
 | Bootstrap | cargo test --locked --features worker-bin --test worker_bootstrap | Real child process; fixed refusal with no argument echo. |
 | Native Windows | Future opt-in targets under tests/native/windows | No native qualification is implemented. Platform compilation is not qualification. |
@@ -34,11 +34,11 @@ observer, freed-memory read, public callback or secret capture exists. The
 production probe is zero-size. Normal owned Drop evidence does not prove native
 provider disposal, process termination erasure, or caller-source wiping.
 
-Conversation phase/allowed kind, Error.phase, immutable deadlines, terminal
-publication arbitration, registration/capacity retention, native UTF-16 storage,
-provider buffers and process/Job/thread disposal remain later gates. The supplied
-codec context is admission input, not a live state machine. No lifecycle/native
-success is claimed by these tests. The worker still refuses all invocations.
+Parent conversation phase/allowed kind, Error.phase, immutable deadlines, terminal
+publication arbitration and registration/capacity retention are now tested with
+private fake ports/clock. Native provider UTF-16 buffers and Windows runtime
+process/Job/thread disposal qualification remain later gates. Codec context alone
+is not a live state machine. The worker still refuses all invocations.
 
 Generation requires taut-proto==0.10.0 and the exact Rust 1.95 rustfmt named in
 protocol/generator.json. Check both authored IR/fingerprints and Rust projection:
@@ -46,7 +46,7 @@ protocol/generator.json. Check both authored IR/fingerprints and Rust projection
 ```sh
 python -B scripts/regen_schema.py --check
 cargo fmt --all -- --check
-rustfmt --edition 2024 --check src/protocol/tests.rs src/protocol/bounds_tests.rs src/protocol/identity_adapter_tests.rs src/protocol/framing_tests.rs
+python -B scripts/check_rustfmt.py
 cargo clippy --all-targets --all-features --locked -- -D warnings
 ```
 
@@ -54,3 +54,42 @@ Cargo builds/tests are Python-free. Public CI/archive fixtures are self-containe
 synthetic and need no private workspace member. Inside gwz-dev use an external
 CARGO_TARGET_DIR; experimental campaigns belong in the private evidence member,
 with compiled outputs outside it. No measured performance budget is claimed.
+
+## Parent supervision checkpoint
+
+The fast tier now also runs the production parent phase bridge, partial ReadPort/
+WritePort framing, private future polling, Context admission/tombstones and pure
+Kernel transitions. Fake clock storage is per context behind an enclosing test
+module; no public injection API or mutable global is exposed. Production samples
+Instant inside the state guard; a stale pre-lock timestamp cannot bypass expiry.
+Tests use no sleeps/processes/services or production launch/reaper loops.
+
+Schedules cover FIFO and capacities 1/8/64, cancellation/drop before and after
+registration, closed/saturated/quarantined admission, retained failed start input
+wiping, ID overflow, 256-entry FIFO eviction/foreign IDs, queued launch permits,
+late successful creation without resume, all five required completion proofs,
+strict Hello/Token/Finished kind/round/Error.phase, malformed bootstrap frames,
+Finish before Begin and after each complete round, both write/reply orders,
+every cancel/write/reply permutation, and ready result polled after cancellation
+or expiry (including already reaped normal Finish). Seeded kernel tests use seeds
+1, 0x82a513c8, 0xdeadc0de and 0xffffffffffffffff, 128 cases ×128 actions each;
+failures print seed and complete action trace. Reentrant/panicking Waker tests
+inspect state-lock availability during wake and final replacement/drop.
+
+The fake ports exercise actual fixed frame reader/writer partial EOF/error/zero/
+over-accounting paths. Existing live-before-deallocation audits remain in force;
+a retained failed future additionally proves its unregistered owned request wipes
+at Ready refusal. Send/Sync checks and negative Clone/Debug lifecycle doctests
+cover the public ownership surface. The lifecycle recipe in Supervision.md compiles
+without a runtime and performs no authentication during doctests.
+
+Local host verification is Darwin/macOS. Windows MSVC and GNU target checks and
+strict Clippy inspect Windows branches; they are not execution evidence. Deferred
+Windows runtime rows include actual origin-thread impersonation/primary changes
+across executor moves, CreateProcess attribute/handle inheritance, creation-time
+Job containment/refusal/late launch, blocked synchronous read/write cancellation,
+failed kill/wait/Job observations, descendant draining and handle/thread cleanup.
+Native provider UTF-16 buffers/SSPI disposal, installed-worker composition and
+provider/HTTP mechanism qualification remain later gates. No synthetic child
+success target or native campaign is included in this checkpoint. Production
+worker bootstrap continues its fixed refusal.

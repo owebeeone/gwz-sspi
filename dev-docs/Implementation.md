@@ -33,16 +33,24 @@ before secret copies, validated two-pass encoding, pure exact partial framing
 and explicit request/token/error adapters. See docs/CallerValues.md and
 [testing](../docs/Testing.md) for exact implemented and deferred obligations.
 
-The sole dependency is reviewed zeroize =1.9.0, defaults disabled, alloc only.
+At that secret checkpoint the sole dependency was reviewed zeroize =1.9.0, defaults disabled, alloc only.
 No generic owned CBOR tree, ordinary owned secret temporary, Clone/Debug secret
 records, global observers, native handles, runtime registration or process effect
 is introduced. Test audits inspect live storage after wiping and before release.
 Normal Drop is not physical erasure, native UTF-16/provider disposal or caller
 source wiping. All private protocol records remain crate-private.
 
-Next: supervision kernel and native worker,
-review, CLI/Python composition, installed-worker qualification and Windows parity.
-Supervisor/Conversation and conversation-phase/terminal publication arbitration
-remain unimplemented. The worker exits with its original fixed refusal. Keep
+The subsequent parent supervision draft implements Supervisor/Conversation and
+owned control/error/receipt values, private pure phase/terminal/proof kernel,
+FIFO admission/checked IDs/256 tombstones, charged launch dispatcher, independent
+control driver, owned launch/reaper/read/write paths and Windows primary/origin
+identity plus creation-time Job/explicit-handle-list anonymous pipes. Reviewed
+before addition: target-Windows windows-sys =0.61.2, defaults false/minimal approved
+features, windows-link =0.2.1 transitive only. No further dependency was added.
+This draft awaits dual Code/State and cold Surface review; it is not implementation
+GO. See docs/Supervision.md, Architecture.md and Testing.md for precise boundaries.
+
+Next: supervisor review, native worker, CLI/Python composition, installed-worker
+qualification and Windows parity. Native SSPI and worker_entry remain unimplemented. The worker exits with its original fixed refusal. Keep
 publish=false until implementation/qualification and registry/remote setup are
 concrete. No release, tag, push or registry mutation.
