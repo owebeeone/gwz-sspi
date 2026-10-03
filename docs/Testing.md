@@ -90,10 +90,12 @@ Windows runtime rows include actual origin-thread impersonation/primary changes
 across executor moves, CreateProcess attribute/handle inheritance, creation-time
 Job containment/refusal/late launch, blocked synchronous read/write cancellation,
 failed kill/wait/Job observations, descendant draining and handle/thread cleanup.
-Native provider UTF-16 buffers/SSPI disposal, installed-worker composition and
-provider/HTTP mechanism qualification remain later gates. No synthetic child
-success target or native campaign is included in this checkpoint. Production
-worker bootstrap continues its fixed refusal.
+The shared production worker now implements local Negotiate/NTLM native work,
+with opt-in owner/process fixtures in [NativeFixtures.md](NativeFixtures.md).
+Digest remains unavailable before credential/context work. Windows cross-target
+checks do not close the listed runtime rows; installed-worker composition and
+provider/HTTP mechanism qualification remain separate gates. Missing/malformed
+compile-time metadata and malformed bootstrap still refuse silently.
 
 ## Supervisor remediation regressions
 
@@ -180,3 +182,29 @@ checks nor fake output prove completed NTLM/Kerberos, actual completion-status
 provider reachability, TLS/EPA, real blocked providers, Digest, HTTP/Git success
 or installed host provenance. Digest and host packaging producer remain open;
 this checkpoint does not close all plan step 3 or qualify Windows activation.
+
+## Native fixture remediation
+
+Portable test-only cleanup guards are attached immediately after helper spawn,
+before PID publication or observation acquisition. Deterministic fake cleanup
+ports cover each unwind boundary and failed cleanup while still disposing owned
+scratch. The original guard tests were RED with no cleanup events and missing
+scratch disposal, then GREEN with the guarded implementation.
+
+Opt-in Windows failures additionally force after-spawn, after-PID and observer
+acquisition/unwind failures. They require finite held-handle exit observation
+before consuming Child::wait and report unconfirmed cleanup as failure; a kill
+request is never confirmation. Scratch creation uses create_new and its owner
+removes only that file. Native execution requires separate campaign receipts.
+
+Job closure and actual parent death now hold production children still suspended,
+so bootstrap/EOF cannot cause their exit. A fixture-owned Job without kill-on-close
+is a runtime negative control and has guarded explicit terminate/exit cleanup.
+Earlier resumed-child receipts had EOF as a competing exit explanation; they do
+not prove this stronger row. The production Job policy remains unchanged.
+
+The local initial Negotiate fixture executes actual QueryContextAttributesW and
+checks release of any returned package allocation. Its per-instance receipt records
+only query status, allocation presence and successful checked release. Initial
+Unresolved, provisional or authoritative selection is allowed according to native
+status; this is not completed remote Kerberos/NTLM evidence.

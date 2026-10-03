@@ -48,3 +48,7 @@ mod tests {
         include!("io_tests.rs");
     }
 }
+#[cfg(test)]
+pub(crate) mod fixture_cleanup {
+    include!("fixture_cleanup.rs");
+}

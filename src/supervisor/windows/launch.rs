@@ -126,6 +126,15 @@ pub(super) fn create_owned(
     {
         return Err(containment());
     }
+    create_in_job(executable, origin, job)
+}
+// Production always supplies the configured kill-on-close Job above. Test-only
+// fixtures may supply their independently owned no-kill Job as a negative control.
+pub(super) fn create_in_job(
+    executable: &WorkerExecutable,
+    origin: Box<dyn Origin>,
+    job: Handle,
+) -> Result<OwnedLaunch, Error> {
     let (child_input, parent_input) = pipe()?;
     let (parent_output, child_output) = pipe()?;
     noninherit(&parent_input)?;

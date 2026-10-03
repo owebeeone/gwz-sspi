@@ -89,3 +89,37 @@ fn production_worker_finishes_before_begin_and_after_initial_ntlm() {
         assert_eq!(report.confirmed, 1);
     }
 }
+#[test]
+#[ignore = "opt-in local initial production Negotiate, no remote authentication"]
+fn production_worker_initial_negotiate_observation_is_local() {
+    let supervisor = supervisor();
+    let mut request = request(true);
+    request.package = Package::Negotiate;
+    let mut conversation =
+        wait(supervisor.start(request, deadline(), Cancellation::new())).unwrap();
+    let token = wait(conversation.step(None)).unwrap();
+    assert!(matches!(
+        token.observation,
+        MechanismObservation::Unresolved
+            | MechanismObservation::Selected {
+                mechanism: Mechanism::Kerberos | Mechanism::Ntlm,
+                ..
+            }
+    ));
+    if token.status == TokenStatus::Complete {
+        assert!(matches!(
+            token.observation,
+            MechanismObservation::Selected {
+                authoritative: true,
+                ..
+            }
+        ));
+    }
+    println!(
+        "initial production Negotiate observation={:?} status={:?}",
+        token.observation, token.status
+    );
+    drop(token);
+    wait(conversation.finish()).unwrap();
+    assert!(wait(supervisor.shutdown(deadline())).outstanding.is_empty());
+}

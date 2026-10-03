@@ -1,17 +1,21 @@
 # Implemented caller values
 
-This checkpoint provides owned values; it does not perform authentication.
-Parent Supervisor/Conversation, deadlines, cancellation, capacity and cleanup
-receipts are implemented; see Supervision.md. Native SSPI and worker_entry remain
-deferred. The packaged worker refuses every call.
+These owned values are inert until admitted by Supervisor/Conversation. Parent
+deadlines, cancellation, capacity and cleanup receipts are implemented; see
+[Supervision.md](Supervision.md). The shared [worker entry](WorkerEntry.md) runs
+native Negotiate/NTLM on Windows with matching trusted packaging metadata.
+Missing/malformed metadata or bootstrap refuses silently; Digest remains refused
+before credential/context work. Native runtime qualification is a separate gate;
+see [NativeFixtures.md](NativeFixtures.md).
 
 `SecretBytes::new(&[u8]) -> SecretBytes` and
 `SecretText::new(&str) -> Result<SecretText, Error>` allocate zeroed fixed storage
 before copying. Text rejects NUL with InvalidRequest. Their borrowed accessors
 `as_bytes` and `as_str` last only while their owner is held. The caller still owns
 the constructor source and must arrange its own wiping; neither constructor can
-wipe borrowed input. There is no ordinary owned secret String/Vec or UTF-16
-conversion in this implementation. Owned bytes are wiped on normal Drop; this
+wipe borrowed input. Value constructors use no ordinary owned secret String/Vec
+and do not convert to UTF-16. The Windows worker separately uses fixed, zeroizing
+UTF-16 native owners. Owned bytes are wiped on normal Drop; this
 is not physical erasure or disposal of provider/LSASS memory.
 
 `TokenLimit::new(raw_bytes: u32) -> Result<TokenLimit, Error>` admits 1–65,536.

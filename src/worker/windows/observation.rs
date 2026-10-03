@@ -1,5 +1,6 @@
 use super::owners::Allocation;
 use crate::{Error, Mechanism, MechanismObservation};
+pub(super) use audit::Audit;
 use windows_sys::Win32::Security::Authentication::Identity::{
     QueryContextAttributesW, SECPKG_ATTR_NEGOTIATION_INFO, SECPKG_NEGOTIATION_COMPLETE,
     SecPkgContext_NegotiationInfoW,
@@ -20,7 +21,7 @@ fn name(pointer: *const u16, expected: &[u8]) -> bool {
     // SAFETY: matched prefix of known bounded package name; check final NUL.
     unsafe { *pointer.add(expected.len()) == 0 }
 }
-pub(super) fn query(context: &SecHandle) -> Result<MechanismObservation, Error> {
+pub(super) fn query(context: &SecHandle, audit: &Audit) -> Result<MechanismObservation, Error> {
     let mut value = SecPkgContext_NegotiationInfoW::default();
     // SAFETY: held initialized context and properly sized initialized output.
     let status = unsafe {
@@ -32,7 +33,9 @@ pub(super) fn query(context: &SecHandle) -> Result<MechanismObservation, Error> 
     };
     let mut allocation = Allocation::new(value.PackageInfo.cast());
     if status != 0 {
-        allocation.release()?;
+        let freed = allocation.release();
+        audit.record(status as u32, !value.PackageInfo.is_null(), freed.is_ok());
+        freed?;
         return Ok(MechanismObservation::Unresolved);
     }
     let selected = if value.PackageInfo.is_null() {
@@ -48,7 +51,9 @@ pub(super) fn query(context: &SecHandle) -> Result<MechanismObservation, Error> 
             None
         }
     };
-    allocation.release()?;
+    let freed = allocation.release();
+    audit.record(status as u32, !value.PackageInfo.is_null(), freed.is_ok());
+    freed?;
     Ok(
         selected.map_or(MechanismObservation::Unresolved, |mechanism| {
             MechanismObservation::Selected {
@@ -57,4 +62,40 @@ pub(super) fn query(context: &SecHandle) -> Result<MechanismObservation, Error> 
             }
         }),
     )
+}
+
+#[cfg(not(test))]
+mod audit {
+    #[derive(Default)]
+    pub(in crate::worker) struct Audit {}
+    impl Audit {
+        pub(in crate::worker) fn record(&self, _: u32, _: bool, _: bool) {}
+    }
+}
+#[cfg(test)]
+mod audit {
+    #[derive(Clone, Copy, Debug)]
+    pub(crate) struct Proof {
+        pub(crate) query_status: u32,
+        pub(crate) allocation_returned: bool,
+        pub(crate) release_success: bool,
+    }
+    #[derive(Default)]
+    pub(crate) struct Audit(pub(crate) Option<std::sync::Arc<std::sync::Mutex<Option<Proof>>>>);
+    impl Audit {
+        pub(crate) fn record(
+            &self,
+            query_status: u32,
+            allocation_returned: bool,
+            release_success: bool,
+        ) {
+            if let Some(receipt) = &self.0 {
+                *receipt.lock().unwrap() = Some(Proof {
+                    query_status,
+                    allocation_returned,
+                    release_success,
+                });
+            }
+        }
+    }
 }

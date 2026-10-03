@@ -67,6 +67,7 @@ pub(super) struct Conversation {
     credential_live: bool,
     context_live: bool,
     cleanup_status: Option<u32>,
+    observation_audit: super::observation::Audit,
     identity: Option<Credentials>,
     target: Wide,
     binding: Binding,
@@ -103,6 +104,7 @@ impl Conversation {
             credential_live: false,
             context_live: false,
             cleanup_status: None,
+            observation_audit: super::observation::Audit::default(),
             identity,
             target: Wide::new(request.target.as_str()),
             binding: Binding::new(request.channel_binding.as_bytes()),
@@ -257,7 +259,7 @@ impl Session for Conversation {
                 authoritative: true,
             }),
             Package::Digest => Err(Error::provider(None)),
-            Package::Negotiate => super::observation::query(&self.context),
+            Package::Negotiate => super::observation::query(&self.context, &self.observation_audit),
         }
     }
     fn cleanup(&mut self) -> Result<(), Error> {
