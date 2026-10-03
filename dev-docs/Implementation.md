@@ -55,8 +55,8 @@ closed all three P2s and all P3s; no new architectural root cause was found.
 This accepts the parent implementation only. See docs/Supervision.md,
 Architecture.md and Testing.md for precise boundaries.
 
-Next: native ownership review, CLI/Python composition, installed-worker
-qualification and Windows parity. Keep publish=false; no release/tag/push or
+Next: CLI/core/Python composition, installed-worker qualification, the bounded
+Digest H(Entity) amendment and Windows parity. Keep publish=false; no release/tag/push or
 registry mutation. The prior fixed refusal is replaced only for valid early
 bootstrap plus trusted compile-time fingerprint metadata, as documented below.
 
@@ -75,7 +75,20 @@ work remains the next gated phase. This final status edit changes no executable
 behavior, public API, dependency or fingerprinted artifact.
 
 
-Native Negotiate/NTLM/shared bootstrap checkpoint is implemented, **not accepted**.
+Native Negotiate/NTLM/shared bootstrap checkpoint is **accepted** after independent
+Code/State/Surface GO at root bb2387d7fdb4b5bb7c16554fabdbf59b245b8b6e, member
+425e13dc011c42e94fdea31779a8e5967aedc82b, reference core
+8cb3a3f01d79699a5ad07b6ec7cfc78321224d31 and evidence
+9adf06beab7a15d1e5c22ec1cecf8e35966e1d7c. One merged remediation closed one P2
+and five P3 records; no architectural cause or production exposure was found.
+The verbatim re-verdicts and bounded acceptance live in gwz-dev/dev-docs/
+GwzSspiNative-Review{Code,State,Surface}-1.md and GwzSspiNativeAcceptance.md.
+Corrected Windows production Supervisor/native/default suites passed, including
+suspended-child Job/no-kill/parent-death discrimination, helper failure cleanup,
+actual initial Negotiate query/allocation release and live normal wipe audits.
+Recipe restoration/owned teardown passed; final owned-process census was empty.
+This accepts initial native mechanisms/shared worker ownership only, not completed
+remote authentication, installed hosts or Windows activation.
 WorkerBootstrap::from_args and worker_entry are public early-dispatch APIs; the
 minimal executable requires strict trusted compile-time packaging metadata with
 no runtime fallback. Actual child primary Hello precedes Begin. Package maximum
