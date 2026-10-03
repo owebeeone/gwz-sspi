@@ -1,0 +1,1042 @@
+{
+  "effective": {
+    "max_depth": 8,
+    "max_encoded_len": 100000
+  },
+  "enums": [
+    {
+      "member_options": {
+        "begin": {},
+        "challenge": {},
+        "error": {},
+        "finish": {},
+        "finished": {},
+        "hello": {},
+        "token": {}
+      },
+      "members": {
+        "begin": 2,
+        "challenge": 3,
+        "error": 7,
+        "finish": 5,
+        "finished": 6,
+        "hello": 1,
+        "token": 4
+      },
+      "name": "MessageKind",
+      "options": {}
+    },
+    {
+      "member_options": {
+        "digest": {},
+        "negotiate": {},
+        "ntlm": {}
+      },
+      "members": {
+        "digest": 3,
+        "negotiate": 1,
+        "ntlm": 2
+      },
+      "name": "Package",
+      "options": {}
+    },
+    {
+      "member_options": {
+        "current_logon": {},
+        "explicit": {}
+      },
+      "members": {
+        "current_logon": 1,
+        "explicit": 2
+      },
+      "name": "IdentityMode",
+      "options": {}
+    },
+    {
+      "member_options": {
+        "complete": {},
+        "continue_needed": {}
+      },
+      "members": {
+        "complete": 2,
+        "continue_needed": 1
+      },
+      "name": "TokenStatus",
+      "options": {}
+    },
+    {
+      "member_options": {
+        "selected": {},
+        "unresolved": {}
+      },
+      "members": {
+        "selected": 2,
+        "unresolved": 1
+      },
+      "name": "ObservationKind",
+      "options": {}
+    },
+    {
+      "member_options": {
+        "digest": {},
+        "kerberos": {},
+        "ntlm": {}
+      },
+      "members": {
+        "digest": 3,
+        "kerberos": 1,
+        "ntlm": 2
+      },
+      "name": "Mechanism",
+      "options": {}
+    },
+    {
+      "member_options": {
+        "identity_mismatch": {},
+        "internal": {},
+        "invalid_request": {},
+        "protocol": {},
+        "provider_rejected": {}
+      },
+      "members": {
+        "identity_mismatch": 3,
+        "internal": 5,
+        "invalid_request": 1,
+        "protocol": 2,
+        "provider_rejected": 4
+      },
+      "name": "ErrorKind",
+      "options": {}
+    },
+    {
+      "member_options": {
+        "begin": {},
+        "bootstrap": {},
+        "challenge": {},
+        "finish": {}
+      },
+      "members": {
+        "begin": 2,
+        "bootstrap": 1,
+        "challenge": 3,
+        "finish": 4
+      },
+      "name": "ErrorPhase",
+      "options": {}
+    }
+  ],
+  "extensions": [],
+  "messages": [
+    {
+      "effective": {
+        "max_depth": 8,
+        "max_encoded_len": 100000
+      },
+      "fields": [
+        {
+          "merge": null,
+          "name": "sid",
+          "optional": false,
+          "options": {},
+          "tag": 1,
+          "transient": false,
+          "type": {
+            "k": "scalar",
+            "scalar": "bytes"
+          }
+        },
+        {
+          "merge": null,
+          "name": "authentication_luid",
+          "optional": false,
+          "options": {},
+          "tag": 2,
+          "transient": false,
+          "type": {
+            "k": "scalar",
+            "scalar": "bytes"
+          }
+        },
+        {
+          "merge": null,
+          "name": "session_id",
+          "optional": false,
+          "options": {},
+          "tag": 3,
+          "transient": false,
+          "type": {
+            "k": "scalar",
+            "scalar": "int"
+          }
+        }
+      ],
+      "name": "PrimaryIdentity",
+      "next_id": null,
+      "options": {},
+      "reserved_names": [],
+      "reserved_tags": []
+    },
+    {
+      "effective": {
+        "max_depth": 8,
+        "max_encoded_len": 100000
+      },
+      "fields": [
+        {
+          "merge": null,
+          "name": "protocol_version",
+          "optional": false,
+          "options": {},
+          "tag": 1,
+          "transient": false,
+          "type": {
+            "k": "scalar",
+            "scalar": "int"
+          }
+        },
+        {
+          "merge": null,
+          "name": "schema_fingerprint",
+          "optional": false,
+          "options": {},
+          "tag": 2,
+          "transient": false,
+          "type": {
+            "k": "scalar",
+            "scalar": "bytes"
+          }
+        },
+        {
+          "merge": null,
+          "name": "build_fingerprint",
+          "optional": false,
+          "options": {},
+          "tag": 3,
+          "transient": false,
+          "type": {
+            "k": "scalar",
+            "scalar": "bytes"
+          }
+        },
+        {
+          "merge": null,
+          "name": "primary_identity",
+          "optional": false,
+          "options": {},
+          "tag": 4,
+          "transient": false,
+          "type": {
+            "k": "msg",
+            "name": "PrimaryIdentity"
+          }
+        }
+      ],
+      "name": "Hello",
+      "next_id": null,
+      "options": {},
+      "reserved_names": [],
+      "reserved_tags": []
+    },
+    {
+      "effective": {
+        "max_depth": 8,
+        "max_encoded_len": 100000
+      },
+      "fields": [
+        {
+          "merge": null,
+          "name": "mode",
+          "optional": false,
+          "options": {},
+          "tag": 1,
+          "transient": false,
+          "type": {
+            "k": "enum",
+            "name": "IdentityMode"
+          }
+        },
+        {
+          "merge": null,
+          "name": "user",
+          "optional": true,
+          "options": {},
+          "tag": 2,
+          "transient": false,
+          "type": {
+            "k": "scalar",
+            "scalar": "str"
+          }
+        },
+        {
+          "merge": null,
+          "name": "domain",
+          "optional": true,
+          "options": {},
+          "tag": 3,
+          "transient": false,
+          "type": {
+            "k": "scalar",
+            "scalar": "str"
+          }
+        },
+        {
+          "merge": null,
+          "name": "password",
+          "optional": true,
+          "options": {},
+          "tag": 4,
+          "transient": false,
+          "type": {
+            "k": "scalar",
+            "scalar": "str"
+          }
+        }
+      ],
+      "name": "Identity",
+      "next_id": null,
+      "options": {},
+      "reserved_names": [],
+      "reserved_tags": []
+    },
+    {
+      "effective": {
+        "max_depth": 8,
+        "max_encoded_len": 100000
+      },
+      "fields": [
+        {
+          "merge": null,
+          "name": "initial_challenge",
+          "optional": false,
+          "options": {},
+          "tag": 1,
+          "transient": false,
+          "type": {
+            "k": "scalar",
+            "scalar": "bytes"
+          }
+        },
+        {
+          "merge": null,
+          "name": "method",
+          "optional": false,
+          "options": {},
+          "tag": 2,
+          "transient": false,
+          "type": {
+            "k": "scalar",
+            "scalar": "str"
+          }
+        },
+        {
+          "merge": null,
+          "name": "uri",
+          "optional": false,
+          "options": {},
+          "tag": 3,
+          "transient": false,
+          "type": {
+            "k": "scalar",
+            "scalar": "str"
+          }
+        }
+      ],
+      "name": "DigestInput",
+      "next_id": null,
+      "options": {},
+      "reserved_names": [],
+      "reserved_tags": []
+    },
+    {
+      "effective": {
+        "max_depth": 8,
+        "max_encoded_len": 100000
+      },
+      "fields": [
+        {
+          "merge": null,
+          "name": "package",
+          "optional": false,
+          "options": {},
+          "tag": 1,
+          "transient": false,
+          "type": {
+            "k": "enum",
+            "name": "Package"
+          }
+        },
+        {
+          "merge": null,
+          "name": "target",
+          "optional": false,
+          "options": {},
+          "tag": 2,
+          "transient": false,
+          "type": {
+            "k": "scalar",
+            "scalar": "str"
+          }
+        },
+        {
+          "merge": null,
+          "name": "identity",
+          "optional": false,
+          "options": {},
+          "tag": 3,
+          "transient": false,
+          "type": {
+            "k": "msg",
+            "name": "Identity"
+          }
+        },
+        {
+          "merge": null,
+          "name": "channel_binding",
+          "optional": false,
+          "options": {},
+          "tag": 4,
+          "transient": false,
+          "type": {
+            "k": "scalar",
+            "scalar": "bytes"
+          }
+        },
+        {
+          "merge": null,
+          "name": "token_limit",
+          "optional": false,
+          "options": {},
+          "tag": 5,
+          "transient": false,
+          "type": {
+            "k": "scalar",
+            "scalar": "int"
+          }
+        },
+        {
+          "merge": null,
+          "name": "digest",
+          "optional": true,
+          "options": {},
+          "tag": 6,
+          "transient": false,
+          "type": {
+            "k": "msg",
+            "name": "DigestInput"
+          }
+        }
+      ],
+      "name": "Begin",
+      "next_id": null,
+      "options": {},
+      "reserved_names": [],
+      "reserved_tags": []
+    },
+    {
+      "effective": {
+        "max_depth": 8,
+        "max_encoded_len": 100000
+      },
+      "fields": [
+        {
+          "merge": null,
+          "name": "round",
+          "optional": false,
+          "options": {},
+          "tag": 1,
+          "transient": false,
+          "type": {
+            "k": "scalar",
+            "scalar": "int"
+          }
+        },
+        {
+          "merge": null,
+          "name": "payload",
+          "optional": false,
+          "options": {},
+          "tag": 2,
+          "transient": false,
+          "type": {
+            "k": "scalar",
+            "scalar": "bytes"
+          }
+        }
+      ],
+      "name": "Challenge",
+      "next_id": null,
+      "options": {},
+      "reserved_names": [],
+      "reserved_tags": []
+    },
+    {
+      "effective": {
+        "max_depth": 8,
+        "max_encoded_len": 100000
+      },
+      "fields": [
+        {
+          "merge": null,
+          "name": "kind",
+          "optional": false,
+          "options": {},
+          "tag": 1,
+          "transient": false,
+          "type": {
+            "k": "enum",
+            "name": "ObservationKind"
+          }
+        },
+        {
+          "merge": null,
+          "name": "mechanism",
+          "optional": true,
+          "options": {},
+          "tag": 2,
+          "transient": false,
+          "type": {
+            "k": "enum",
+            "name": "Mechanism"
+          }
+        },
+        {
+          "merge": null,
+          "name": "authoritative",
+          "optional": false,
+          "options": {},
+          "tag": 3,
+          "transient": false,
+          "type": {
+            "k": "scalar",
+            "scalar": "bool"
+          }
+        }
+      ],
+      "name": "MechanismObservation",
+      "next_id": null,
+      "options": {},
+      "reserved_names": [],
+      "reserved_tags": []
+    },
+    {
+      "effective": {
+        "max_depth": 8,
+        "max_encoded_len": 100000
+      },
+      "fields": [
+        {
+          "merge": null,
+          "name": "round",
+          "optional": false,
+          "options": {},
+          "tag": 1,
+          "transient": false,
+          "type": {
+            "k": "scalar",
+            "scalar": "int"
+          }
+        },
+        {
+          "merge": null,
+          "name": "status",
+          "optional": false,
+          "options": {},
+          "tag": 2,
+          "transient": false,
+          "type": {
+            "k": "enum",
+            "name": "TokenStatus"
+          }
+        },
+        {
+          "merge": null,
+          "name": "attributes",
+          "optional": false,
+          "options": {},
+          "tag": 3,
+          "transient": false,
+          "type": {
+            "k": "scalar",
+            "scalar": "int"
+          }
+        },
+        {
+          "merge": null,
+          "name": "observation",
+          "optional": false,
+          "options": {},
+          "tag": 4,
+          "transient": false,
+          "type": {
+            "k": "msg",
+            "name": "MechanismObservation"
+          }
+        },
+        {
+          "merge": null,
+          "name": "payload",
+          "optional": false,
+          "options": {},
+          "tag": 5,
+          "transient": false,
+          "type": {
+            "k": "scalar",
+            "scalar": "bytes"
+          }
+        }
+      ],
+      "name": "Token",
+      "next_id": null,
+      "options": {},
+      "reserved_names": [],
+      "reserved_tags": []
+    },
+    {
+      "effective": {
+        "max_depth": 8,
+        "max_encoded_len": 100000
+      },
+      "fields": [],
+      "name": "Finish",
+      "next_id": null,
+      "options": {},
+      "reserved_names": [],
+      "reserved_tags": []
+    },
+    {
+      "effective": {
+        "max_depth": 8,
+        "max_encoded_len": 100000
+      },
+      "fields": [],
+      "name": "Finished",
+      "next_id": null,
+      "options": {},
+      "reserved_names": [],
+      "reserved_tags": []
+    },
+    {
+      "effective": {
+        "max_depth": 8,
+        "max_encoded_len": 100000
+      },
+      "fields": [
+        {
+          "merge": null,
+          "name": "kind",
+          "optional": false,
+          "options": {},
+          "tag": 1,
+          "transient": false,
+          "type": {
+            "k": "enum",
+            "name": "ErrorKind"
+          }
+        },
+        {
+          "merge": null,
+          "name": "phase",
+          "optional": false,
+          "options": {},
+          "tag": 2,
+          "transient": false,
+          "type": {
+            "k": "enum",
+            "name": "ErrorPhase"
+          }
+        },
+        {
+          "merge": null,
+          "name": "native_status",
+          "optional": true,
+          "options": {},
+          "tag": 3,
+          "transient": false,
+          "type": {
+            "k": "scalar",
+            "scalar": "int"
+          }
+        }
+      ],
+      "name": "Error",
+      "next_id": null,
+      "options": {},
+      "reserved_names": [],
+      "reserved_tags": []
+    },
+    {
+      "effective": {
+        "max_depth": 8,
+        "max_encoded_len": 100000
+      },
+      "fields": [
+        {
+          "merge": null,
+          "name": "version",
+          "optional": false,
+          "options": {},
+          "tag": 1,
+          "transient": false,
+          "type": {
+            "k": "scalar",
+            "scalar": "int"
+          }
+        },
+        {
+          "merge": null,
+          "name": "kind",
+          "optional": false,
+          "options": {},
+          "tag": 2,
+          "transient": false,
+          "type": {
+            "k": "enum",
+            "name": "MessageKind"
+          }
+        },
+        {
+          "merge": null,
+          "name": "hello",
+          "optional": true,
+          "options": {},
+          "tag": 10,
+          "transient": false,
+          "type": {
+            "k": "msg",
+            "name": "Hello"
+          }
+        },
+        {
+          "merge": null,
+          "name": "begin",
+          "optional": true,
+          "options": {},
+          "tag": 11,
+          "transient": false,
+          "type": {
+            "k": "msg",
+            "name": "Begin"
+          }
+        },
+        {
+          "merge": null,
+          "name": "challenge",
+          "optional": true,
+          "options": {},
+          "tag": 12,
+          "transient": false,
+          "type": {
+            "k": "msg",
+            "name": "Challenge"
+          }
+        },
+        {
+          "merge": null,
+          "name": "token",
+          "optional": true,
+          "options": {},
+          "tag": 13,
+          "transient": false,
+          "type": {
+            "k": "msg",
+            "name": "Token"
+          }
+        },
+        {
+          "merge": null,
+          "name": "finish",
+          "optional": true,
+          "options": {},
+          "tag": 14,
+          "transient": false,
+          "type": {
+            "k": "msg",
+            "name": "Finish"
+          }
+        },
+        {
+          "merge": null,
+          "name": "finished",
+          "optional": true,
+          "options": {},
+          "tag": 15,
+          "transient": false,
+          "type": {
+            "k": "msg",
+            "name": "Finished"
+          }
+        },
+        {
+          "merge": null,
+          "name": "error",
+          "optional": true,
+          "options": {},
+          "tag": 16,
+          "transient": false,
+          "type": {
+            "k": "msg",
+            "name": "Error"
+          }
+        }
+      ],
+      "name": "Envelope",
+      "next_id": null,
+      "options": {},
+      "reserved_names": [],
+      "reserved_tags": []
+    }
+  ],
+  "options": {
+    "max_depth": 8,
+    "max_encoded_len": 100000
+  },
+  "services": [],
+  "shapes": {
+    "atom": {
+      "class": "engine",
+      "contract_version": "v1",
+      "core": "atom",
+      "delivery": "stream",
+      "events": [
+        "replace"
+      ],
+      "fixed_profile": {},
+      "history": "latest",
+      "initiation": "pull|push",
+      "lifecycle": "mailbox_terminal",
+      "merge": "sequential_overwrite",
+      "name": "atom",
+      "operations": [
+        "read",
+        "replace",
+        "subscribe"
+      ],
+      "ordering": "scalar_version",
+      "payload": "whole-state",
+      "position": "version",
+      "recovery": "latest_refresh",
+      "retention": "latest",
+      "writers": "single"
+    },
+    "crdt": {
+      "class": "engine",
+      "contract_version": "v1",
+      "core": "crdt",
+      "delivery": "stream",
+      "events": [
+        "op",
+        "sync"
+      ],
+      "fixed_profile": {},
+      "history": "reconstructible",
+      "initiation": "push-bidi",
+      "lifecycle": "replica_sync",
+      "merge": "profile_defined_convergent",
+      "name": "crdt",
+      "operations": [
+        "apply",
+        "bootstrap",
+        "read",
+        "sync"
+      ],
+      "ordering": "causal_per_origin",
+      "payload": "opaque-ops",
+      "position": "causal_vector",
+      "recovery": "anti_entropy",
+      "retention": "convergence_safe",
+      "writers": "multi-merge"
+    },
+    "log": {
+      "class": "engine",
+      "contract_version": "v1",
+      "core": "log",
+      "delivery": "stream",
+      "events": [
+        "append"
+      ],
+      "fixed_profile": {},
+      "history": "append-only",
+      "initiation": "pull|push",
+      "lifecycle": "mailbox_terminal",
+      "merge": "none",
+      "name": "log",
+      "operations": [
+        "append",
+        "read",
+        "subscribe"
+      ],
+      "ordering": "scalar_sequence",
+      "payload": "whole",
+      "position": "cursor",
+      "recovery": "expire_below_floor",
+      "retention": "bounded_records",
+      "writers": "source"
+    },
+    "snapshot_delta": {
+      "class": "profile",
+      "contract_version": "v1",
+      "core": "swmr",
+      "delivery": "stream",
+      "events": [
+        "delta",
+        "snapshot"
+      ],
+      "fixed_profile": {
+        "recovery": "expire"
+      },
+      "history": "reconstructible",
+      "initiation": "push",
+      "lifecycle": "mailbox_terminal",
+      "merge": "sequential_single_writer",
+      "name": "snapshot_delta",
+      "operations": [
+        "publish_delta",
+        "publish_snapshot",
+        "read",
+        "subscribe"
+      ],
+      "ordering": "scalar_epoch_sequence",
+      "payload": "delta",
+      "position": "epoch_cursor",
+      "recovery": "expire",
+      "retention": "snapshot_bounded_deltas",
+      "writers": "single"
+    },
+    "stream": {
+      "class": "engine",
+      "contract_version": "v1",
+      "core": "stream",
+      "delivery": "stream",
+      "events": [
+        "event"
+      ],
+      "fixed_profile": {},
+      "history": "none",
+      "initiation": "push",
+      "lifecycle": "live_terminal",
+      "merge": "none",
+      "name": "stream",
+      "operations": [
+        "publish",
+        "subscribe"
+      ],
+      "ordering": "live_session",
+      "payload": "whole-or-delta",
+      "position": "none",
+      "recovery": "none",
+      "retention": "none",
+      "writers": "source"
+    },
+    "swmr": {
+      "class": "engine",
+      "contract_version": "v1",
+      "core": "swmr",
+      "delivery": "stream",
+      "events": [
+        "delta",
+        "reset",
+        "snapshot"
+      ],
+      "fixed_profile": {},
+      "history": "reconstructible",
+      "initiation": "push",
+      "lifecycle": "mailbox_terminal",
+      "merge": "sequential_single_writer",
+      "name": "swmr",
+      "operations": [
+        "publish_delta",
+        "publish_snapshot",
+        "read",
+        "reset",
+        "subscribe"
+      ],
+      "ordering": "scalar_epoch_sequence",
+      "payload": "delta",
+      "position": "epoch_cursor",
+      "recovery": "in_band_reset_repair",
+      "retention": "snapshot_bounded_deltas",
+      "writers": "single"
+    },
+    "text_crdt": {
+      "class": "profile",
+      "contract_version": "v1",
+      "core": "crdt",
+      "delivery": "stream",
+      "events": [
+        "op",
+        "sync"
+      ],
+      "fixed_profile": {
+        "payload": "text_crdt.profile/v1"
+      },
+      "history": "reconstructible",
+      "initiation": "push-bidi",
+      "lifecycle": "replica_sync",
+      "merge": "stable_item_text",
+      "name": "text_crdt",
+      "operations": [
+        "bootstrap",
+        "delete",
+        "insert",
+        "read",
+        "sync"
+      ],
+      "ordering": "causal_per_origin",
+      "payload": "text-ops",
+      "position": "causal_vector",
+      "recovery": "anti_entropy",
+      "retention": "convergence_safe",
+      "writers": "multi-merge"
+    },
+    "unary": {
+      "class": "interaction",
+      "contract_version": "v1",
+      "core": null,
+      "delivery": "once",
+      "events": [
+        "value"
+      ],
+      "fixed_profile": {},
+      "history": "none",
+      "initiation": "pull",
+      "lifecycle": "request_response",
+      "merge": "none",
+      "name": "unary",
+      "operations": [
+        "call"
+      ],
+      "ordering": "none",
+      "payload": "whole",
+      "position": "none",
+      "recovery": "not_applicable",
+      "retention": "none",
+      "writers": "single"
+    },
+    "value": {
+      "class": "engine",
+      "contract_version": "v0",
+      "core": "value",
+      "delivery": "once",
+      "events": [
+        "value"
+      ],
+      "fixed_profile": {},
+      "history": "materialized",
+      "initiation": "pull|push",
+      "lifecycle": "persistent_register",
+      "merge": "attributed_lww",
+      "name": "value",
+      "operations": [
+        "read",
+        "set"
+      ],
+      "ordering": "lww_lamport_origin",
+      "payload": "whole-state",
+      "position": "op_identity",
+      "recovery": "materialized_read",
+      "retention": "materialized_winner",
+      "writers": "multi-attributed"
+    }
+  },
+  "version": 2
+}

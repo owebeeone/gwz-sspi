@@ -5,6 +5,7 @@
 | Fast | cargo test --lib --locked | Pure/contract unit tests; fake time and ports; no process, sleeps or service. Currently zero behavioral tests. |
 | Contract | Dedicated integration targets under tests/contract | Same lifecycle/framing invariants against fake ports and later native adapters. Add explicit Cargo test targets when implemented. |
 | Replay | Dedicated targets under tests/replay | Fixed default seeds, bounded cases; print seed/input/trace on failure. Larger campaigns opt in, never expand the fast loop silently. |
+| Schema | python -B -m unittest discover -s tests/schema -v | Pinned taut-proto==0.10.0; synthetic values only; no native/process I/O; not proof of production admission or zeroization. |
 | Bootstrap | cargo test --locked --features worker-bin --test worker_bootstrap | Real child process; currently proves fail-closed scaffold and no echoed arguments. |
 | Native Windows | Dedicated opt-in targets under tests/native/windows | Real SSPI/Job/IPC/identity tests. Not implemented; platform compile checks alone are not qualification. |
 
