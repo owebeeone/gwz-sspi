@@ -93,3 +93,41 @@ Native provider UTF-16 buffers/SSPI disposal, installed-worker composition and
 provider/HTTP mechanism qualification remain later gates. No synthetic child
 success target or native campaign is included in this checkpoint. Production
 worker bootstrap continues its fixed refusal.
+
+## Supervisor remediation regressions
+
+Public compilation checks require start/shutdown futures to be Future + Send +
+'static, retaining both after dropping Supervisor; step still borrows Conversation.
+Focused RED reproduced the original receiver-lifetime errors, Protocol replacing
+saved Cancelled after reap, and a retained failed challenge with no wipe event.
+The corrected tests cover cancellation signal and fake-clock expiry, both taken
+and retired token orders, and oversized/wrong-phase/cancelled/expired challenges
+with expected error kinds, wiping before Ready refusal and no frame sent.
+
+Fake successful Origin capture checks observable synchronous disposal during all
+unregistered refusal paths and Drop, outside the state lock. The docs explicitly
+permit that captured-handle close, without a hard OS-time bound; metadata/provider
+queries, worker/thread creation, IPC and process waits/joins remain absent from poll.
+
+Production bounded launch/read/write/reap/join iterations now run against fake
+Platform/Child/ports and owned task completions. Tests cover late successful launch
+without resume or secret writes, failed containment/resume/launch, failed terminate
+and held exit/Job observations, unfinished reader/writer/launch owners, full
+reader/writer-loop errors and caught panics, join-error outcomes and eventual
+payload/port/child disposal before joining launch and releasing capacity. An actual
+fake-port Hello→Begin→Token→Finish→Finished lifecycle uses the production bridge and
+future polls. Another pauses after real Token readiness and reaps before publication
+for each cancellation/expiry and token ownership order.
+
+Kernel seeded schedules remain kernel evidence. Separate production reaper
+schedules use seeds 1, 0x4a2ff930, 0xc1a58b01 and 0xffffffffffffffff, 32 cases per seed
+and up to 64 completion actions per case, printing seed/case/actions/effects on
+failure. These tests execute the real reaper decisions and owned joins/disposal;
+they do not manually set all completion proof bits. Fake owners implement the same
+private completion port as production actual JoinHandles. No fast test creates a
+thread/process or sleeps. Native thread creation/join and Windows runtime rows
+remain deferred qualification; fake completion outcomes are not native evidence.
+
+The trusted-host packaging construction and owned-future handoff walkthrough
+compiles in Rustdoc. Its build_fingerprint is explicit synthetic metadata whose
+production producer remains step 4; there is no invented runtime hash derivation.

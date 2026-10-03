@@ -54,7 +54,9 @@ is admitted against outstanding records.
 Windows new/start use synchronous token metadata probes. start retains the actual
 originating-thread handle; the charged launch owner rechecks its impersonation and
 current process primary immediately before CreateProcess. Future::poll does no
-native probe. Identity scratch is aligned, initialized, fixed and zeroizing; copied
+metadata/provider/creation/IPC/process wait or join. A refused unregistered start
+or its Drop may synchronously dispose the captured handle outside state locks,
+without a hard OS time bound. Identity scratch is aligned, initialized, fixed and zeroizing; copied
 SID/LUID owners are likewise wiping. No secret UTF-16 conversion is needed in this
 parent phase. Provider/native credential buffers and disposal remain deferred.
 
@@ -70,3 +72,10 @@ as required by [Microsoft's attribute lifetime contract](https://learn.microsoft
 The held Job/process and I/O owners remain charged until those actual observations,
 not just requests. Cross-compilation supports inspection but does not qualify any
 Windows runtime row. Publication, packaging integration and activation remain gated.
+
+Remediation exposes only private bounded iterations of existing launch admission,
+read/write frame handling, reaping and launch join. Native drivers call those same
+iterations around their thread creation/wait loops. The private Owner port holds
+the actual JoinHandle in production and requires actual completion before consuming
+its join; fake owners provide explicit completion/join outcomes only in unit tests.
+There is no public injection, new disposal queue, dependency or native/wire policy.

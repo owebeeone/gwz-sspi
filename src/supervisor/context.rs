@@ -1,4 +1,5 @@
 //! Context-owned records, admission and bounded cleanup tombstones.
+use super::owners::Owner;
 use super::{
     control::{WakeHub, WakeSlot},
     kernel::{Fault, Kernel, Stage},
@@ -10,7 +11,6 @@ use crate::{AuthRequest, ErrorKind, TokenStep};
 use std::collections::{BTreeMap, VecDeque};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, OnceLock, Weak, mpsc::SyncSender};
-use std::thread::JoinHandle;
 use std::time::Instant;
 
 pub(super) struct Payload {
@@ -25,8 +25,8 @@ pub(super) struct Completion {
 }
 pub(super) struct Tasks {
     pub(super) child: Option<Arc<dyn Child>>,
-    pub(super) reader: Option<JoinHandle<()>>,
-    pub(super) writer: Option<JoinHandle<()>>,
+    pub(super) reader: Option<Box<dyn Owner>>,
+    pub(super) writer: Option<Box<dyn Owner>>,
 }
 pub(super) struct Record {
     pub(super) sequence: u64,
@@ -35,7 +35,7 @@ pub(super) struct Record {
     pub(super) stop: AtomicBool,
     pub(super) wake: Arc<WakeSlot>,
     pub(super) payload: Mutex<Payload>,
-    pub(super) launch: Mutex<Option<JoinHandle<()>>>,
+    pub(super) launch: Mutex<Option<Box<dyn Owner>>>,
     pub(super) completion: OnceLock<Completion>,
     pub(super) tasks: Mutex<Tasks>,
     pub(super) package: crate::Package,
@@ -310,7 +310,8 @@ impl Context {
             .map_err(|_| Fault::new(ErrorKind::ContainmentFailed));
         match handle {
             Ok(handle) => {
-                *record.launch.lock().unwrap_or_else(|p| p.into_inner()) = Some(handle);
+                *record.launch.lock().unwrap_or_else(|p| p.into_inner()) =
+                    Some(super::owners::thread(handle));
                 self.hub.notify();
                 Ok(())
             }

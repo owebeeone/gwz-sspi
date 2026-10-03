@@ -1,4 +1,5 @@
-//! Poll only pure state/owned bytes; all native and blocking work is offloaded.
+//! Poll does no metadata/creation/IPC/process waits. A refused unregistered
+//! snapshot handle may close synchronously outside locks, without a hard OS bound.
 use super::{
     api::Conversation,
     context::{Context, Record, Waiter},
@@ -153,6 +154,33 @@ fn send(
     context.hub.notify();
     Ok(())
 }
+impl Step<'_> {
+    fn complete(&mut self, result: Result<TokenStep, Failure>) -> Poll<Result<TokenStep, Failure>> {
+        let challenge = self.challenge.take();
+        drop(challenge);
+        self.done = true;
+        Poll::Ready(result)
+    }
+}
+pub(super) fn publish(
+    context: &Context,
+    record: &Record,
+    token: Option<TokenStep>,
+) -> Result<TokenStep, Failure> {
+    let published = context.update(record, context.clock.now(), |kernel| kernel.published());
+    match (published, token) {
+        (Some(Ok(())), Some(token)) => Ok(token),
+        (Some(Err(fault)), _) => {
+            context.fault(record, fault);
+            Err(context.failure(Some(record), terminal(context, record).unwrap_or(fault)))
+        }
+        _ => {
+            let fault = Fault::new(ErrorKind::Protocol);
+            context.fault(record, fault);
+            Err(context.failure(Some(record), terminal(context, record).unwrap_or(fault)))
+        }
+    }
+}
 impl Future for Step<'_> {
     type Output = Result<TokenStep, Failure>;
     fn poll(self: Pin<&mut Self>, cx: &mut TaskContext<'_>) -> Poll<Self::Output> {
@@ -164,8 +192,7 @@ impl Future for Step<'_> {
             return Poll::Pending;
         }
         if let Some(fault) = terminal(context, record) {
-            this.done = true;
-            return Poll::Ready(Err(context.failure(Some(record), fault)));
+            return this.complete(Err(context.failure(Some(record), fault)));
         }
         if !this.started {
             let phase = context.update(record, context.clock.now(), |kernel| kernel.stage);
@@ -196,8 +223,7 @@ impl Future for Step<'_> {
                 prepared.and_then(|(command, frame)| send(context, record, command, frame));
             if let Err(fault) = result {
                 context.fault(record, fault);
-                this.done = true;
-                return Poll::Ready(Err(
+                return this.complete(Err(
                     context.failure(Some(record), terminal(context, record).unwrap_or(fault))
                 ));
             }
@@ -221,31 +247,12 @@ impl Future for Step<'_> {
                 .unwrap_or_else(|p| p.into_inner())
                 .token
                 .take();
-            let published =
-                context.update(record, context.clock.now(), |kernel| kernel.published());
-            match (published, token) {
-                (Some(Ok(())), Some(token)) => {
-                    this.done = true;
-                    return Poll::Ready(Ok(token));
-                }
-                (Some(Err(fault)), _) => {
-                    context.fault(record, fault);
-                    this.done = true;
-                    return Poll::Ready(Err(
-                        context.failure(Some(record), terminal(context, record).unwrap_or(fault))
-                    ));
-                }
-                _ => {
-                    let fault = Fault::new(ErrorKind::Protocol);
-                    context.fault(record, fault);
-                    this.done = true;
-                    return Poll::Ready(Err(context.failure(Some(record), fault)));
-                }
-            }
+            let result = publish(context, record, token);
+            return this.complete(result);
         }
+
         if let Some(fault) = terminal(context, record) {
-            this.done = true;
-            return Poll::Ready(Err(context.failure(Some(record), fault)));
+            return this.complete(Err(context.failure(Some(record), fault)));
         }
         Poll::Pending
     }

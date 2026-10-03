@@ -8,6 +8,7 @@ mod futures;
 mod io;
 pub(crate) mod kernel;
 mod monitor;
+mod owners;
 mod platform;
 pub(crate) mod ports;
 mod values;
@@ -31,6 +32,16 @@ mod tests {
     mod control {
         use super::*;
         include!("control_tests.rs");
+    }
+    mod orchestration {
+        use super::*;
+        include!("orchestration_support.rs");
+        include!("orchestration_tests.rs");
+        include!("orchestration_schedule_tests.rs");
+    }
+    mod remediation {
+        use super::*;
+        include!("remediation_tests.rs");
     }
     mod io {
         use super::*;

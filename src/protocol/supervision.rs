@@ -152,3 +152,35 @@ pub(crate) fn reply(
         _ => Err(Error::new(ErrorKind::Protocol)),
     }
 }
+
+#[cfg(test)]
+pub(crate) mod fixtures {
+    use super::*;
+    pub(crate) fn frame(name: &str, round: Option<u8>) -> Storage {
+        let bytes = super::super::test_vectors::VECTORS
+            .iter()
+            .find(|(key, _)| *key == name)
+            .unwrap()
+            .1;
+        let mut reader = Reader::new(bytes);
+        let mut value = wire::EnvelopeRef::read(&mut reader, 1).unwrap();
+        reader.end().unwrap();
+        if let Some(round) = round {
+            value.token.as_mut().unwrap().round = u64::from(round);
+        }
+        let mut context = profile::Context::unbound();
+        context.package = Some(wire::Package::Ntlm);
+        context.cap = Some(TokenLimit::new(64).unwrap());
+        context.provider_max = Some(65536);
+        context.expected_round = round;
+        if let Some(hello) = &value.hello {
+            context.build = Some(hello.build_fingerprint.try_into().unwrap());
+            context.primary = Some((
+                hello.primary_identity.sid,
+                hello.primary_identity.authentication_luid,
+                hello.primary_identity.session_id as u32,
+            ));
+        }
+        profile::encode(&value, &context).unwrap()
+    }
+}

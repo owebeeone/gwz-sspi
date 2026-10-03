@@ -11,7 +11,9 @@ pub struct WorkerExecutable {
 }
 impl WorkerExecutable {
     /// Construct from the host's trusted installed path, never a PATH lookup.
-    /// The digest identifies the matching installed library/worker artifact set.
+    /// The host's trusted packaging manifest/build output supplies the exact
+    /// build_fingerprint bytes emitted by the matching worker Hello. This is not
+    /// a runtime executable-hash rule. The packaging producer remains deferred.
     pub fn new(path: PathBuf, build_fingerprint: [u8; 32]) -> Result<Self, Error> {
         if !path.is_absolute() || path.as_os_str().is_empty() {
             return Err(Error::new(ErrorKind::InvalidRequest));

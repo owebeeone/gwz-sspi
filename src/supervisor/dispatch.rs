@@ -16,37 +16,10 @@ pub(super) fn run(context: Arc<Context>) {
                 .collect::<Vec<_>>()
         };
         for record in records {
-            let handle = {
-                let mut handle = record.launch.lock().unwrap_or_else(|p| p.into_inner());
-                if handle
-                    .as_ref()
-                    .is_some_and(std::thread::JoinHandle::is_finished)
-                {
-                    handle.take()
-                } else {
-                    None
-                }
-            };
-            if let Some(handle) = handle {
-                let result = handle.join();
-                context.update(&record, context.clock.now(), |kernel| {
-                    kernel.proof.launch_finished = true;
-                    if result.is_err() {
-                        kernel.fail(super::kernel::Fault::new(
-                            crate::ErrorKind::ContainmentFailed,
-                        ));
-                        kernel.quarantined = true;
-                    }
-                });
-                context.hub.notify();
-            }
+            join_launch(&context, &record);
         }
 
-        let ticket = context
-            .dispatch
-            .lock()
-            .unwrap_or_else(|p| p.into_inner())
-            .pop_front();
+        let ticket = next_launch(&context);
         if let Some((record, origin)) = ticket {
             let _result = context.spawn_launch(record, origin);
             continue;
@@ -65,4 +38,32 @@ pub(super) fn run(context: Arc<Context>) {
             .wait_timeout(wait, Duration::from_millis(10))
             .unwrap_or_else(|p| p.into_inner());
     }
+}
+
+pub(super) fn join_launch(context: &Context, record: &super::context::Record) {
+    let handle = {
+        let mut handle = record.launch.lock().unwrap_or_else(|p| p.into_inner());
+        super::owners::take_finished(&mut handle)
+    };
+    if let Some(handle) = handle {
+        let success = handle.join();
+        context.update(record, context.clock.now(), |kernel| {
+            kernel.proof.launch_finished = true;
+            if !success {
+                kernel.fail(super::kernel::Fault::new(
+                    crate::ErrorKind::ContainmentFailed,
+                ));
+                kernel.quarantined = true;
+            }
+        });
+        context.hub.notify();
+    }
+}
+
+pub(super) fn next_launch(context: &Context) -> Option<super::context::LaunchTicket> {
+    context
+        .dispatch
+        .lock()
+        .unwrap_or_else(|p| p.into_inner())
+        .pop_front()
 }

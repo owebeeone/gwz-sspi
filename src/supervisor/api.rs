@@ -43,14 +43,17 @@ impl Supervisor {
     /// Own the request and wait for capacity/verified Hello. No credentials are
     /// sent until step(None). This method synchronously snapshots/refuses the
     /// originating thread and captures its owned handle. Subsequent metadata,
-    /// launch and I/O waits are charged/offloaded; Future::poll performs no OS call.
-    /// Moving the future does not substitute executor-thread identity.
+    /// launch and I/O waits are charged/offloaded. Poll performs no metadata or
+    /// provider query, worker/thread creation, IPC, process wait or join. Refusal
+    /// before registration and Drop may synchronously close the captured origin
+    /// handle outside state locks; no hard OS time bound is promised.
+    /// Moving the owned Send + 'static future does not substitute executor identity.
     pub fn start(
         &self,
         request: AuthRequest,
         deadline: Deadline,
         cancellation: Cancellation,
-    ) -> impl Future<Output = Result<Conversation, Failure>> + Send {
+    ) -> impl Future<Output = Result<Conversation, Failure>> + Send + use<> {
         let validation =
             crate::protocol::supervision::validate_request(&request).map_err(Fault::from_error);
         let origin = validation.and_then(|()| {
@@ -80,8 +83,12 @@ impl Supervisor {
     }
     /// Close admission and cancel all records immediately. The owned future waits
     /// only until this explicit separate shutdown deadline; dropping it leaves
-    /// supervision running. Repeated calls are idempotent observations.
-    pub fn shutdown(&self, deadline: Deadline) -> impl Future<Output = ShutdownReport> + Send {
+    /// supervision running. Its Send + 'static future does not borrow Supervisor.
+    /// Repeated calls are idempotent observations.
+    pub fn shutdown(
+        &self,
+        deadline: Deadline,
+    ) -> impl Future<Output = ShutdownReport> + Send + use<> {
         self.context.close();
         let wake = Arc::new(WakeSlot::default());
         self.context.hub.register(&wake);
