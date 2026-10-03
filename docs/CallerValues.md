@@ -58,3 +58,55 @@ exit, containment or cleanup. Its token projection is a value conversion only;
 a future supervisor must first establish phase and publication eligibility.
 Direct NTLM/Digest use their selected provider; unresolved Continue observations
 require a Negotiate context. Complete requires authoritative Selected.
+
+## Construct, inspect and dispose
+
+All public types below are exported from the `gwz_sspi` crate root. This synthetic
+example uses `zeroize::Zeroizing` for caller-owned sources, so a downstream host
+using this recipe also declares `zeroize = "=1.9.0"` with the `alloc` feature.
+Dropping those sources is separate from dropping the copies owned by gwz-sspi.
+The binding below is a synthetic fixture, not evidence of a verified TLS origin.
+Constructing AuthRequest does not validate its complete profile or authenticate.
+
+```rust
+use gwz_sspi::{AuthRequest, Identity, Package, SecretBytes, SecretText, TokenLimit};
+use zeroize::Zeroizing;
+
+fn main() -> Result<(), gwz_sspi::Error> {
+    let bytes_source = Zeroizing::new(*b"synthetic challenge");
+    let bytes = SecretBytes::new(&bytes_source[..]);
+    assert_eq!(bytes.as_bytes().len(), bytes_source.len());
+    drop(bytes_source); // Wipe the caller's source, independently of its copy.
+    drop(bytes); // Wipe the library-owned copy.
+
+    let user_source = Zeroizing::new(*b"synthetic-user");
+    let domain_source = Zeroizing::new(*b"EXAMPLE");
+    let password_source = Zeroizing::new(*b"synthetic-password");
+    let identity = Identity::Explicit {
+        user: SecretText::new(std::str::from_utf8(&user_source[..]).unwrap())?,
+        domain: SecretText::new(std::str::from_utf8(&domain_source[..]).unwrap())?,
+        password: SecretText::new(std::str::from_utf8(&password_source[..]).unwrap())?,
+    };
+    drop((user_source, domain_source, password_source)); // Source owners wipe.
+
+    let mut binding_source = Zeroizing::new([0u8; 53]);
+    binding_source[..21].copy_from_slice(b"tls-server-end-point:");
+    let request = AuthRequest {
+        package: Package::Ntlm,
+        target: SecretText::new("HTTP/example.test")?,
+        identity,
+        channel_binding: SecretBytes::new(&binding_source[..]),
+        token_limit: TokenLimit::new(512)?,
+        digest: None,
+    };
+    drop(binding_source); // Wipe the caller's binding fixture.
+    assert_eq!(request.target.as_str(), "HTTP/example.test");
+    assert_eq!(request.token_limit.raw_bytes(), 512);
+    drop(request); // Wipe its owned identity, target and binding copies.
+    Ok(())
+}
+```
+
+The literal target is public fixture metadata. Real mutable credential sources
+need their own wiping owner on error paths as well as success; Zeroizing supplies
+that Drop behavior here. No Supervisor or worker is called by this example.

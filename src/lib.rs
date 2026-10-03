@@ -3,6 +3,7 @@
 //! Secret buffers and the private strict codec are implemented. Supervisor,
 //! Conversation, native authentication and process containment remain unimplemented.
 //! The optional worker executable refuses every invocation.
+#![doc = include_str!("../docs/CallerValues.md")]
 #![deny(missing_docs)]
 #[allow(dead_code)]
 mod protocol;

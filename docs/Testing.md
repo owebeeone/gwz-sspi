@@ -4,7 +4,7 @@
 |---|---|---|
 | Fast | cargo test --lib --locked | Pure Rust strict codec, borrowed/owned records, bounds, fake partial framing and wipe audit; no process/sleep/service. |
 | Caller | cargo test --test caller_values --locked | Checked TokenLimit and borrowed-source ownership. |
-| Full | cargo test --all-features --locked | Fast/caller tests, 12 negative Clone/Debug doctests and bootstrap refusal. |
+| Full | cargo test --all-features --locked | Fast/caller tests, 12 negative Clone/Debug doctests, compiled caller walkthrough and bootstrap refusal. |
 | Schema | python -B -m unittest discover -s tests/schema -v | 13 pinned-taut/tooling/cap-model tests; synthetic data only. |
 | Bootstrap | cargo test --locked --features worker-bin --test worker_bootstrap | Real child process; fixed refusal with no argument echo. |
 | Native Windows | Future opt-in targets under tests/native/windows | No native qualification is implemented. Platform compilation is not qualification. |

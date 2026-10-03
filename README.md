@@ -48,4 +48,4 @@ Gearu owns release preparation; GitHub Actions owns crates.io publication.
 
 Private [message schema and checks](protocol/README.md) and [wire design](docs/WireProtocol.md)
 are preserved from the accepted schema checkpoint. The private IR-driven codec
-and caller values require dual secret-boundary review before supervision.
+and caller values passed the dual secret-boundary review; supervision is next.

@@ -20,8 +20,13 @@ See protocol/README.md and docs/WireProtocol.md; exported IR and fingerprints ar
 reproducible with taut-proto 0.10.0. The exact authored schema, exported IR,
 WireProtocol.md and contract bytes remain unchanged.
 
-Caller values and the private secret-rust-v1 projection are now drafted for dual
-Code/State secret-boundary review. Implemented: fixed zeroizing SecretBytes/Text,
+Caller values and the private secret-rust-v1 projection passed independent
+Code/State/Surface review at root e9f80c697acc5860ad90dbf5acd5888ccf2bd586,
+member e3851768da8d58140d92590bf61575f6edbe333c and unchanged core
+8cb3a3f01d79699a5ad07b6ec7cfc78321224d31. No blocking findings; Surface's
+nonblocking missing import/example note is addressed by a compiled caller
+walkthrough in docs/CallerValues.md, included in crate Rustdoc. This status/example
+update changes no protocol or executable behavior. Implemented: fixed zeroizing SecretBytes/Text,
 checked required TokenLimit, owned request/identity/Digest/token/error values,
 IR-generated borrowed/owned records and canonical CBOR walks, borrowed admission
 before secret copies, validated two-pass encoding, pure exact partial framing
@@ -35,7 +40,7 @@ is introduced. Test audits inspect live storage after wiping and before release.
 Normal Drop is not physical erasure, native UTF-16/provider disposal or caller
 source wiping. All private protocol records remain crate-private.
 
-Next: settle dual Code/State review, then supervision kernel and native worker,
+Next: supervision kernel and native worker,
 review, CLI/Python composition, installed-worker qualification and Windows parity.
 Supervisor/Conversation and conversation-phase/terminal publication arbitration
 remain unimplemented. The worker exits with its original fixed refusal. Keep
