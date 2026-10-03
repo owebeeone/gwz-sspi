@@ -1,0 +1,18 @@
+[project]
+name = "gwz-sspi"
+branch = "main"
+remote = "origin"
+tag_prefix = "v"
+# Intended repository; configure the real origin before Gearu plan/release.
+github_repo = "owebeeone/gwz-sspi"
+
+[rust]
+manifests = ["Cargo.toml"]
+lockfile = "Cargo.lock"
+lock_command = ["cargo", "generate-lockfile", "--offline"]
+
+[release]
+checks = [["python3", "scripts/release_checks.py", "--version", "{version}"]]
+exact_checks = [["python3", "scripts/release_checks.py", "--version", "{version}"]]
+commit_message = "chore(release): {name} {version}"
+github_notes = "{name} {tag}. See RELEASE.md for scope and qualification."

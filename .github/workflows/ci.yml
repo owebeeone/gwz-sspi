@@ -1,0 +1,32 @@
+name: Standalone SSPI package
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    name: Build and scaffold checks (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-14, windows-2025]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install exact Rust toolchain
+        run: rustup toolchain install 1.95.0 --profile minimal --component rustfmt --component clippy
+      - name: Formatting
+        run: cargo fmt --all -- --check
+      - name: Strict lint
+        run: cargo clippy --all-targets --all-features --locked -- -D warnings
+      - name: Fast library tier
+        run: cargo test --lib --locked
+      - name: Bootstrap refusal test
+        run: cargo test --all-features --locked
+      - name: Build standalone crate archive
+        run: cargo package --locked

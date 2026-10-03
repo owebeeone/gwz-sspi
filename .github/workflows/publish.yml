@@ -1,0 +1,46 @@
+name: Publish gwz-sspi
+on:
+  release:
+    types: [published]
+permissions:
+  contents: read
+jobs:
+  publish:
+    if: github.repository == 'owebeeone/gwz-sspi'
+    runs-on: ubuntu-24.04
+    environment: crates-io
+    timeout-minutes: 20
+    concurrency:
+      group: gwz-sspi-crates-io
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          persist-credentials: false
+      - name: Install Rust
+        run: rustup toolchain install 1.95.0 --profile minimal --component rustfmt --component clippy
+      - name: Verify tag, version and implementation release gate
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import subprocess
+          import tomllib
+          with open("Cargo.toml", "rb") as source:
+              version = tomllib.load(source)["package"]["version"]
+          if os.environ["RELEASE_TAG"] != f"v{version}":
+              raise SystemExit("release tag and Cargo version differ")
+          subprocess.run(["python3", "scripts/release_checks.py", "--version", version], check=True)
+          PY
+      - name: Authenticate using Trusted Publishing
+        id: auth
+        uses: rust-lang/crates-io-auth-action@v1
+      - name: Publish verified crate
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+        run: cargo publish --locked

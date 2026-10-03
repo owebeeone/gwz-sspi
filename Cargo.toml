@@ -1,0 +1,35 @@
+[package]
+name = "gwz-sspi"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+license = "GPL-2.0-only"
+description = "Contained Windows SSPI authentication conversations for Rust hosts"
+readme = "README.md"
+# Intended publication target; no GitHub remote is configured yet.
+repository = "https://github.com/owebeeone/gwz-sspi"
+publish = false
+include = ["/src/**", "/protocol/**", "/tests/**", "/scripts/**", "/docs/**", "/Cargo.toml", "/Cargo.lock", "/README.md", "/LICENSE", "/RELEASE.md"]
+
+[workspace]
+resolver = "2"
+
+[features]
+default = []
+worker-bin = []
+
+[[bin]]
+name = "gwz-sspi-worker"
+path = "src/bin/gwz-sspi-worker.rs"
+required-features = ["worker-bin"]
+
+[[test]]
+name = "worker_bootstrap"
+path = "tests/worker_bootstrap.rs"
+required-features = ["worker-bin"]
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+
+[lints.clippy]
+undocumented_unsafe_blocks = "deny"

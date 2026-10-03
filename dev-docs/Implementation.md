@@ -1,0 +1,14 @@
+# SSPI implementation checkpoint
+
+2026-10-03. Repository/package/release scaffold only.
+
+Accepted design tuple in gwz-dev: root f2029e4b1739c0214138675dfb16abdb44f6a0d7,
+core d78a664e3c5a325c6f12be409eb7645c1c1b51d0, evidence
+1beb1d204c824701ddbd033c7f89df9a3561f5e5. Design GO is not implementation GO.
+
+Next: caller values and private taut schema/zeroizing codecs, fake contract tests,
+then dual Code/State secret-boundary review. Then supervision/native worker,
+review, CLI/Python composition, installed-worker qualification and Windows parity.
+No authentication API or codec exists in this scaffold. The worker exits with a
+fixed refusal. Keep publish=false until the accepted implementation/qualification
+and registry/remote setup are concrete. No release, tag, push or registry mutation.
