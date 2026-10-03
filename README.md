@@ -4,7 +4,7 @@ Windows-specific SSPI authentication in a contained worker process, with a Rust
 caller API. The CLI can self-execute its worker entry; Python can bundle the
 matching standalone worker. This is not a network stream or generic worker system.
 
-**Status: scaffold plus private taut schema/design, not an authentication implementation or release.**
+**Status: caller values and private secret codec implemented; authentication and release remain gated.**
 The library compiles independently. The optional executable deliberately refuses
 all invocations. Publication is disabled in Cargo.toml until implementation review
 and Windows qualification pass. No configured remote or registry publication.
@@ -13,7 +13,7 @@ and Windows qualification pass. No configured remote or registry publication.
 
 | Path | Ownership |
 |---|---|
-| src/contract/ | Owned caller values, errors and lifecycle API |
+| src/secret.rs and src/values.rs | Owned caller secret/request/token/error values |
 | src/protocol/ and protocol/ | Private taut schema, generated codecs and secret adapters |
 | src/supervisor/ | Admission, cancellation, cleanup and retained capacity |
 | src/platform/windows/ | Native SSPI, Jobs, process creation and pipe ownership |
@@ -25,7 +25,7 @@ and Windows qualification pass. No configured remote or registry publication.
 | docs/ and dev-docs/ | Caller/testing documentation and review checkpoints |
 
 Boundary directories have ownership notes; they are not unimplemented public Rust
-modules. The caller API lands in the first reviewed implementation chunk.
+modules. The implemented [caller values](docs/CallerValues.md) carry no native handles.
 
 ## Development
 
@@ -37,9 +37,9 @@ cargo fmt --all -- --check
 cargo package --locked --allow-dirty --no-verify
 ```
 
-The first command is the future fast-library tier; it currently contains no
-behavioral SSPI tests. All-features currently adds only the executable-refusal
-test. Native authentication qualification has not run against this package.
+The fast tier checks pure secret ownership, strict generated codecs and fake byte
+framing. All-features adds caller values, negative trait doctests and executable
+refusal. Native authentication qualification has not run against this package.
 Use an external CARGO_TARGET_DIR when working in gwz-dev.
 
 [Architecture](docs/Architecture.md), [testing](docs/Testing.md),
@@ -47,4 +47,5 @@ Use an external CARGO_TARGET_DIR when working in gwz-dev.
 Gearu owns release preparation; GitHub Actions owns crates.io publication.
 
 Private [message schema and checks](protocol/README.md) and [wire design](docs/WireProtocol.md)
-are a separate review checkpoint. No secret-safe Rust codec is implemented.
+are preserved from the accepted schema checkpoint. The private IR-driven codec
+and caller values require dual secret-boundary review before supervision.

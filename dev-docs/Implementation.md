@@ -17,13 +17,27 @@ member 7ea900e77f272dd6e0d64f566c59fb29322f5738, core
 DRAFT banner is historical; its exact reviewed bytes remain unchanged because
 they participate in the contract fingerprint. Status is recorded here separately.
 See protocol/README.md and docs/WireProtocol.md; exported IR and fingerprints are
-reproducible with taut-proto 0.10.0. Twelve synthetic schema/tooling/cap-model tests pass. No
-Rust reference binding or production codec is generated. This does not close the
-secret-boundary gate.
+reproducible with taut-proto 0.10.0. The exact authored schema, exported IR,
+WireProtocol.md and contract bytes remain unchanged.
 
-Next: caller values and IR-driven zeroizing codecs, fake contract tests,
-then dual Code/State secret-boundary review. Then supervision/native worker,
+Caller values and the private secret-rust-v1 projection are now drafted for dual
+Code/State secret-boundary review. Implemented: fixed zeroizing SecretBytes/Text,
+checked required TokenLimit, owned request/identity/Digest/token/error values,
+IR-generated borrowed/owned records and canonical CBOR walks, borrowed admission
+before secret copies, validated two-pass encoding, pure exact partial framing
+and explicit request/token/error adapters. See docs/CallerValues.md and
+[testing](../docs/Testing.md) for exact implemented and deferred obligations.
+
+The sole dependency is reviewed zeroize =1.9.0, defaults disabled, alloc only.
+No generic owned CBOR tree, ordinary owned secret temporary, Clone/Debug secret
+records, global observers, native handles, runtime registration or process effect
+is introduced. Test audits inspect live storage after wiping and before release.
+Normal Drop is not physical erasure, native UTF-16/provider disposal or caller
+source wiping. All private protocol records remain crate-private.
+
+Next: settle dual Code/State review, then supervision kernel and native worker,
 review, CLI/Python composition, installed-worker qualification and Windows parity.
-No authentication API or codec exists in this scaffold. The worker exits with a
-fixed refusal. Keep publish=false until the accepted implementation/qualification
-and registry/remote setup are concrete. No release, tag, push or registry mutation.
+Supervisor/Conversation and conversation-phase/terminal publication arbitration
+remain unimplemented. The worker exits with its original fixed refusal. Keep
+publish=false until implementation/qualification and registry/remote setup are
+concrete. No release, tag, push or registry mutation.

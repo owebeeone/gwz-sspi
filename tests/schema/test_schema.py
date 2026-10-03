@@ -38,6 +38,23 @@ class SchemaTests(unittest.TestCase):
         exported = json.loads((ROOT / "protocol/sspi.ir.json").read_bytes())
         self.assertEqual(schema_json(schema_from_json(exported)), schema_json(SCHEMA))
 
+    def test_projection_uses_fresh_semantic_digest_in_one_generation(self):
+        original = Path.read_bytes
+        def source(path):
+            if path == ROOT / "docs/WireProtocol.md":
+                return original(path) + b"synthetic semantic change\n"
+            return original(path)
+        with patch.object(Path, "read_bytes", source):
+            outputs = regen_schema.artifacts(SCHEMA)
+        manifest = json.loads(outputs[ROOT / "protocol/contract.json"])
+        generated = outputs[ROOT / "src/protocol/generated/mod.rs"].decode()
+        expected = bytes.fromhex(manifest["contract_sha256"])
+        import re
+        numbers = re.search(r"CONTRACT: \[u8; 32\] = \[(.*?)\];", generated, re.S).group(1)
+        self.assertEqual(bytes(int(part.strip()) for part in numbers.split(',') if part.strip()), expected)
+        self.assertNotEqual(outputs[ROOT / "protocol/contract.json"], (ROOT / "protocol/contract.json").read_bytes())
+        self.assertEqual(outputs[ROOT / "protocol/sspi.ir.json"], (ROOT / "protocol/sspi.ir.json").read_bytes())
+
     def test_all_seven_wire_kinds_and_envelope_body_tags_are_fixed(self):
         kinds = ["hello", "begin", "challenge", "token", "finish", "finished", "error"]
         self.assertEqual(SCHEMA.enums["MessageKind"].members,

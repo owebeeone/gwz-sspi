@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate/export the private taut IR and semantic contract digest; no Rust codec."""
+"""Validate/export the private taut IR and semantic contract digest and private Rust projection."""
 import argparse
 import hashlib
 import importlib.metadata
@@ -15,8 +15,12 @@ ROOT = Path(__file__).resolve().parents[1]
 def released_taut():
     """Refuse non-release metadata and any generator version other than the pin."""
     pin = json.loads((ROOT / "protocol/generator.json").read_text())
-    if pin["projection"] != "ir-only-v1":
+    if pin["projection"] != "secret-rust-v1":
         raise SystemExit("unsupported schema projection")
+    import subprocess
+    formatter = subprocess.run(["rustfmt", "--version"], check=True, capture_output=True, text=True).stdout.strip()
+    if formatter != pin["rustfmt"]:
+        raise SystemExit("rustfmt release version mismatch")
     try:
         distribution = importlib.metadata.distribution("taut-proto")
     except importlib.metadata.PackageNotFoundError:
@@ -53,10 +57,15 @@ def artifacts(schema):
         "semantics_sha256": hashlib.sha256(semantics).hexdigest(),
         "contract_sha256": contract_digest(ir, semantics),
     }
-    return {
+    outputs = {
         ROOT / "protocol/sspi.ir.json": ir,
         ROOT / "protocol/contract.json": (json.dumps(manifest, indent=2, sort_keys=True) + "\n").encode("utf-8"),
     }
+    from rust_projection import artifacts as rust_artifacts
+    outputs.update(rust_artifacts(ir, ROOT, manifest["contract_sha256"]))
+    from reference_vectors import vectors
+    outputs.update(vectors(schema, ROOT, manifest["contract_sha256"]))
+    return outputs
 
 
 def main():
@@ -79,6 +88,7 @@ def main():
             if not path.exists() or path.read_bytes() != expected:
                 raise SystemExit(f"stale generated artifact: {path.name}")
         else:
+            path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(expected)
     print(f"{len(outputs)} schema artifacts {'verified' if args.check else 'written'}")
 

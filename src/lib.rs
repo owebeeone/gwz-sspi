@@ -1,9 +1,15 @@
-//! Contained Windows SSPI authentication for Rust hosts.
+//! Owned caller values for contained Windows SSPI authentication.
 //!
-//! This is the independently buildable package scaffold. Authentication,
-//! supervision, private IPC codecs and the accepted caller API are not yet
-//! implemented. No placeholder API reports authentication or cleanup success.
-//!
-//! The optional `worker-bin` executable currently refuses every invocation.
-//! See the repository's implementation plan and test layout for the next gates.
+//! Secret buffers and the private strict codec are implemented. Supervisor,
+//! Conversation, native authentication and process containment remain unimplemented.
+//! The optional worker executable refuses every invocation.
 #![deny(missing_docs)]
+#[allow(dead_code)]
+mod protocol;
+mod secret;
+mod values;
+pub use secret::{SecretBytes, SecretText};
+pub use values::{
+    AuthRequest, DigestInput, Error, ErrorKind, Identity, Mechanism, MechanismObservation, Package,
+    TokenLimit, TokenStatus, TokenStep,
+};
