@@ -9,6 +9,7 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
 import regen_schema
+from cap_contract_model import AuthRequestModel, TokenLimitModel, admit_length
 
 PACKAGE = regen_schema.released_taut()
 from taut.ir.load import load_schema, schema_from_json
@@ -106,6 +107,35 @@ class SchemaTests(unittest.TestCase):
         decoded = codec.decode(SCHEMA, "Envelope", cbor.dumps(value))
         self.assertIn("__unknown__", decoded)
         # Production must reject this; never mistake reference round-trip for admission.
+
+    def test_required_caller_cap_transfers_to_distinct_begin_wire_values(self):
+        with self.assertRaises(TypeError):
+            AuthRequestModel()  # no default cap
+        first = AuthRequestModel(TokenLimitModel(64)).begin()
+        second = AuthRequestModel(TokenLimitModel(128)).begin()
+        self.assertEqual({k: v for k, v in first.items() if k != "token_limit"},
+                         {k: v for k, v in second.items() if k != "token_limit"})
+        for begin, expected in [(first, 64), (second, 128)]:
+            decoded = codec.decode(SCHEMA, "Begin", codec.encode(SCHEMA, "Begin", begin))
+            self.assertEqual(decoded["token_limit"], expected)
+
+    def test_caller_cap_range_and_payload_boundaries_model(self):
+        for invalid in [0, 65537, -1, True]:
+            with self.subTest(invalid=invalid):
+                with self.assertRaisesRegex(ValueError, "InvalidRequest"):
+                    TokenLimitModel(invalid)
+        for cap in [1, 64, 65536]:
+            request = AuthRequestModel(TokenLimitModel(cap))
+            for source, error in [("caller", "InvalidRequest"),
+                                  ("provider", "ProviderRejected"), ("wire", "Protocol")]:
+                for size in [cap - 1, cap]:
+                    admit_length(size, request, 100000, source)
+                with self.assertRaisesRegex(ValueError, error):
+                    admit_length(cap + 1, request, 100000, source)
+        request = AuthRequestModel(TokenLimitModel(64))
+        admit_length(32, request, 32, "caller")
+        with self.assertRaisesRegex(ValueError, "InvalidRequest"):
+            admit_length(33, request, 32, "caller")
 
     def test_semantic_document_changes_contract_fingerprint(self):
         ir = b"synthetic-ir"

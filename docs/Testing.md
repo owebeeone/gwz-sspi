@@ -19,3 +19,7 @@ measure warm/cold execution separately. No measured performance budget is claime
 by this scaffold. Review stops: codec/API secrets before supervision implementation;
 native credential storage/disposal before host integration; aggregate acceptance
 before production use. Do not publish zero tests as proof of native correctness.
+
+The schema cap model specifies the required caller input, exact Begin transfer
+and bound/error cases with fixed synthetic data. It is not a Rust implementation
+or proof that future IPC/native adapters enforce those cases.

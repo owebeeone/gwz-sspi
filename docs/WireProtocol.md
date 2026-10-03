@@ -2,7 +2,8 @@
 
 2026-10-03. DRAFT for schema/design review. This standalone document refines
 GWZ SSPI design revision 2 §4, without implementing authentication or changing
-its caller API. `protocol/sspi.taut.py` is the sole field/tag/type authority;
+its process/cleanup contract. It includes a bounded caller-input amendment:
+AuthRequest.token_limit: TokenLimit, required with no default (see §2). `protocol/sspi.taut.py` is the sole field/tag/type authority;
 this document defines its additional closed-profile checks and lifecycle.
 The exported IR and contract fingerprint are generated, never hand-edited.
 Acceptance covers this schema and semantics only. The secret codec/API gate,
@@ -69,6 +70,19 @@ not code-point counts; the total encoded-frame bound additionally applies.
 
 Package values are Negotiate=1, Ntlm=2, Digest=3. The schema's Identity.user/domain
 are already split by the caller (DOMAIN\\user once; UPN with empty domain).
+AuthRequest owns a required token_limit: TokenLimit, constructed by the host via
+TokenLimit::new(raw_bytes: u32). Valid range is 1–65,536 inclusive; 0 and 65,537
+return InvalidRequest before start/registration. There is no default. Host derives
+raw bytes from its existing HTTP header bound after scheme/base64 overhead,
+without transferring HTTP types or policy into this library. Parent stores the
+immutable value and copies it exactly to Begin.token_limit. Two otherwise equal
+requests with different declared caps therefore carry different Begin values.
+Parent refuses oversized initial/subsequent caller input as InvalidRequest before
+sending; worker also checks it before credential/context processing. Worker
+provider overproduction is ProviderRejected; an oversized Token received by the
+parent is Protocol before caller publication. These are terminal conversation
+failures with the existing cleanup contract; no cap expansion or retry.
+
 No textual identity enters Hello: parent verifies the child's actual SID/LUID/
 session against its captured primary token before sending any Begin/secret.
 Do not accept identity asserted by bootstrap arguments. Fingerprints identify

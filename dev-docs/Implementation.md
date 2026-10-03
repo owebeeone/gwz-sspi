@@ -12,7 +12,7 @@ core d78a664e3c5a325c6f12be409eb7645c1c1b51d0, evidence
 
 Private taut schema/design checkpoint is now drafted for independent review.
 See protocol/README.md and docs/WireProtocol.md; exported IR and fingerprints are
-reproducible with taut-proto 0.10.0. Ten synthetic schema/tooling tests pass. No
+reproducible with taut-proto 0.10.0. Twelve synthetic schema/tooling/cap-model tests pass. No
 Rust reference binding or production codec is generated. This does not close the
 secret-boundary gate.
 
