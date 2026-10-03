@@ -6,6 +6,7 @@
 #![doc = include_str!("../docs/CallerValues.md")]
 #![doc = include_str!("../docs/Supervision.md")]
 #![doc = include_str!("../docs/WorkerEntry.md")]
+#![doc = include_str!("../docs/HostPackaging.md")]
 #![deny(missing_docs)]
 #[allow(dead_code)]
 mod protocol;
@@ -26,3 +27,5 @@ pub use supervisor::{
 
 mod worker;
 pub use worker::{WorkerBootstrap, worker_entry};
+
+pub mod packaging;

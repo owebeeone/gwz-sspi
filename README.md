@@ -4,7 +4,7 @@ Windows-specific SSPI authentication in a contained worker process, with a Rust
 caller API. The CLI can self-execute its worker entry; Python can bundle the
 matching standalone worker. This is not a network stream or generic worker system.
 
-**Status: caller values, private codec, parent supervision and shared serial Windows Negotiate/NTLM worker implemented; native review, qualification and release remain gated.**
+**Status: caller values, private codec, parent supervision and shared serial Windows Negotiate/NTLM worker accepted within their bounded gates; installed-host packaging implemented pending review. Full Windows qualification and release remain gated.**
 The library compiles independently. The optional executable requires trusted
 compile-time packaging metadata and a valid inherited-pipe bootstrap. Publication is disabled in Cargo.toml until implementation review
 and Windows qualification pass. No configured remote or registry publication.
@@ -45,13 +45,15 @@ production fixtures are provided; complete authentication qualification remains 
 Use an external CARGO_TARGET_DIR when working in gwz-dev.
 
 [Architecture](docs/Architecture.md), [testing](docs/Testing.md),
+[host packaging](docs/HostPackaging.md),
 [release instructions](RELEASE.md), [implementation status](dev-docs/Implementation.md).
 Gearu owns release preparation; GitHub Actions owns crates.io publication.
 
 Private [message schema and checks](protocol/README.md) and [wire design](docs/WireProtocol.md)
 are preserved from the accepted schema checkpoint. The private IR-driven codec
 and caller values passed the dual secret-boundary review. Parent supervision is
-accepted separately. Serial native ownership/shared bootstrap is implemented
-pending its Code/State/Surface review; Digest remains refused.
+accepted separately. Serial native ownership/shared bootstrap passed its
+Code/State/Surface review; completed remote authentication remains unqualified.
+Installed-host packaging has its own pending review; Digest remains refused.
 See [caller lifecycle](docs/Supervision.md), [worker entry](docs/WorkerEntry.md) and
 [native fixture commands](docs/NativeFixtures.md).

@@ -21,8 +21,9 @@ is safe to classify; do not log any IPC/native payload or provider string.
 The host's trusted packaging producer supplies identical `build_fingerprint`
 bytes to WorkerExecutable::new and the early worker entry. This field is not a
 runtime file hash, Cargo version, environment-selected executable or library
-default. The installed matching artifact-set producer remains plan step 4. CLI
-self-execution and Python bundling are not activated by this implementation.
+default. The explicit host packaging producer and callable CLI/Python
+descriptors are documented in [HostPackaging.md](HostPackaging.md). HTTP
+composition and Windows endpoint activation remain future work.
 
 This compiled recipe names the early handoff. Functions are not executed in the
 example, so doctests create no handles/processes or native work:
