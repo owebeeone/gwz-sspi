@@ -8,7 +8,7 @@ pub(crate) struct Primary {
     pub(crate) luid: SecretBytes,
     pub(crate) session: u32,
 }
-pub(super) trait Origin: Send {
+pub(super) trait Origin: Send + Sync {
     fn verify(&self) -> Result<(), Error>;
 }
 pub(crate) trait ReadPort: Send {

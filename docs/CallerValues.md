@@ -115,3 +115,11 @@ fn main() -> Result<(), gwz_sspi::Error> {
 The literal target is public fixture metadata. Real mutable credential sources
 need their own wiping owner on error paths as well as success; Zeroizing supplies
 that Drop behavior here. No Supervisor or worker is called by this example.
+
+The HTTPS caller copies offers, decoded challenges and Authorization encodings
+only into initialized fixed wiping owners. Identity is copied directly from its
+helper secret owner; verified origin CBT is copied into SecretBytes. Borrowed
+constructor inputs remain separately owned. Hyper HeaderValue keeps a dependency
+copy of Authorization, and native-tls returns its own CBT allocation; the adapter
+wipes that CBT allocation immediately after copying. This does not promise
+physical erasure of dependency internals, TLS buffers, provider or LSASS memory.

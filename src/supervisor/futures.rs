@@ -37,6 +37,7 @@ pub(super) struct Start {
     pub(super) origin: Option<Result<Box<dyn Origin>, Fault>>,
     pub(super) record: Option<Arc<Record>>,
     pub(super) done: bool,
+    pub(super) captured: bool,
 }
 impl Future for Start {
     type Output = Result<Conversation, Failure>;
@@ -65,7 +66,18 @@ impl Future for Start {
             let record = match admitted {
                 Ok(None) => return Poll::Pending,
                 Ok(Some(record)) => record,
-                Err(fault) => {
+                Err(mut fault) => {
+                    if this.captured
+                        && fault.kind == ErrorKind::CapacityUnavailable
+                        && this
+                            .context
+                            .state
+                            .lock()
+                            .unwrap_or_else(|p| p.into_inner())
+                            .closed
+                    {
+                        fault = Fault::new(ErrorKind::Closed);
+                    }
                     this.done = true;
                     this.context.remove_waiter(&this.waiter);
                     this.request.take();

@@ -3,7 +3,7 @@ use super::{
     control::WakeSlot,
     futures::{Finish, Shutdown, Start, Step},
     kernel::Fault,
-    ports::Platform,
+    ports::{Origin, Platform},
     values::*,
 };
 use crate::{AuthRequest, Error, ErrorKind, SecretBytes, TokenStep};
@@ -20,6 +20,25 @@ use std::sync::Arc;
 /// ```
 pub struct Supervisor {
     pub(super) context: Arc<Context>,
+}
+/// Owned originating-thread provenance scoped to the issuing Supervisor.
+/// Share through Arc for concurrent Opens; the capture is Send + Sync.
+/// It contains no caller request and exposes no native handles.
+/// ```compile_fail
+/// fn require<T: Clone>() {} require::<gwz_sspi::CallerCapture>();
+/// ```
+/// ```compile_fail
+/// fn require<T: std::fmt::Debug>() {} require::<gwz_sspi::CallerCapture>();
+/// ```
+pub struct CallerCapture {
+    context: Arc<()>,
+    origin: Arc<dyn Origin>,
+}
+struct CapturedOrigin(Arc<dyn Origin>);
+impl Origin for CapturedOrigin {
+    fn verify(&self) -> Result<(), Error> {
+        self.0.verify()
+    }
 }
 impl Supervisor {
     /// Capture the primary token and refuse caller-thread impersonation. This
@@ -62,6 +81,87 @@ impl Supervisor {
                 .capture_origin()
                 .map_err(Fault::from_error)
         });
+        self.start_origin(request, deadline, cancellation, origin, false)
+    }
+    /// Capture the current original caller before work moves to another thread.
+    /// Synchronous metadata/handle work has no hard OS bound. No record, worker
+    /// or capacity permit is allocated. Closed admission returns Closed; origin
+    /// capture, impersonation or primary mismatch returns IdentityMismatch.
+    /// Every eventual launch rechecks this same held original thread.
+    /// Last-reference disposal may synchronously close its handle outside locks.
+    pub fn capture_caller(&self) -> Result<CallerCapture, Error> {
+        if self
+            .context
+            .state
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .closed
+        {
+            return Err(Error::new(ErrorKind::Closed));
+        }
+        let origin = self
+            .context
+            .platform
+            .capture_origin()
+            .map_err(|_| Error::new(ErrorKind::IdentityMismatch))?;
+        if self
+            .context
+            .state
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .closed
+        {
+            return Err(Error::new(ErrorKind::Closed));
+        }
+        Ok(CallerCapture {
+            context: self.context.identity.clone(),
+            origin: Arc::from(origin),
+        })
+    }
+    /// Start using previously captured originating-thread provenance.
+    /// Foreign capture or invalid request refuses with InvalidRequest before
+    /// registration. The owned Send + 'static future borrows neither input.
+    /// This call retains a private one-use origin ticket without metadata queries,
+    /// native-handle duplication or worker/thread creation. Multiple Starts can
+    /// share the same capture under this Supervisor's existing bounded capacity.
+    /// Completed refusal releases request/ticket owners outside state locks.
+    pub fn start_captured(
+        &self,
+        caller: &CallerCapture,
+        request: AuthRequest,
+        deadline: Deadline,
+        cancellation: Cancellation,
+    ) -> impl Future<Output = Result<Conversation, Failure>> + Send + use<> {
+        let origin = if !Arc::ptr_eq(&caller.context, &self.context.identity) {
+            Err(Fault::new(ErrorKind::InvalidRequest))
+        } else {
+            crate::protocol::supervision::validate_request(&request)
+                .map_err(Fault::from_error)
+                .map(|()| Box::new(CapturedOrigin(caller.origin.clone())) as Box<dyn Origin>)
+        };
+        let origin = origin.and_then(|origin| {
+            if self
+                .context
+                .state
+                .lock()
+                .unwrap_or_else(|p| p.into_inner())
+                .closed
+            {
+                Err(Fault::new(ErrorKind::Closed))
+            } else {
+                Ok(origin)
+            }
+        });
+        self.start_origin(request, deadline, cancellation, origin, true)
+    }
+    fn start_origin(
+        &self,
+        request: AuthRequest,
+        deadline: Deadline,
+        cancellation: Cancellation,
+        origin: Result<Box<dyn Origin>, Fault>,
+        captured: bool,
+    ) -> Start {
         let waiter = Arc::new(Waiter {
             wake: Arc::new(WakeSlot::default()),
             deadline: deadline.instant(),
@@ -75,6 +175,7 @@ impl Supervisor {
             origin: Some(origin),
             record: None,
             done: false,
+            captured,
         }
     }
     /// Observe only this context's retained record or bounded FIFO tombstone.

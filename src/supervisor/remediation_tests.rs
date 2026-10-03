@@ -111,3 +111,77 @@ fn every_completed_failed_step_wipes_its_challenge_while_future_is_retained() {
         drop(future);
     }
 }
+
+#[test]
+fn captured_starts_are_owned_context_bound_and_share_one_original_capture() {
+    fn shared<T: Send + Sync>() {}
+    fn owned<T: Future + Send + 'static>(future: T) -> T {
+        future
+    }
+    shared::<crate::CallerCapture>();
+    let context = context(2);
+    let supervisor = Supervisor {
+        context: context.clone(),
+    };
+    let caller = supervisor.capture_caller().unwrap();
+    let other = Supervisor {
+        context: super::context(1),
+    };
+    let deadline = Deadline::new(Instant::now() + Duration::from_secs(3600));
+    let mut foreign = Box::pin(owned(other.start_captured(
+        &caller,
+        request(),
+        deadline,
+        Cancellation::new(),
+    )));
+    let failure = match poll(&mut foreign) {
+        Poll::Ready(Err(failure)) => failure,
+        _ => panic!("foreign capture must refuse before registration"),
+    };
+    assert_eq!(failure.kind(), ErrorKind::InvalidRequest);
+    assert_eq!(failure.cleanup_status(), CleanupStatus::Confirmed);
+    assert!(failure.record_id().is_none());
+    assert!(other.context.state.lock().unwrap().records.is_empty());
+    let mut first = Box::pin(owned(supervisor.start_captured(
+        &caller,
+        request(),
+        deadline,
+        Cancellation::new(),
+    )));
+    let mut second = Box::pin(owned(supervisor.start_captured(
+        &caller,
+        request(),
+        deadline,
+        Cancellation::new(),
+    )));
+    drop(caller);
+    assert!(poll(&mut first).is_pending());
+    assert!(poll(&mut second).is_pending());
+    assert_eq!(context.state.lock().unwrap().records.len(), 2);
+    assert_eq!(context.dispatch.lock().unwrap().len(), 2);
+    for (_, origin) in context.dispatch.lock().unwrap().drain(..) {
+        origin.verify().unwrap();
+    }
+}
+
+#[test]
+fn capture_and_captured_start_refuse_closed_admission_without_records() {
+    let context = context(1);
+    let supervisor = Supervisor {
+        context: context.clone(),
+    };
+    let caller = supervisor.capture_caller().unwrap();
+    context.close();
+    assert!(matches!(supervisor.capture_caller(), Err(error) if error.kind() == ErrorKind::Closed));
+    let mut start = Box::pin(supervisor.start_captured(
+        &caller,
+        request(),
+        Deadline::new(Instant::now() + Duration::from_secs(3600)),
+        Cancellation::new(),
+    ));
+    assert!(
+        matches!(poll(&mut start), Poll::Ready(Err(error)) if error.kind() == ErrorKind::Closed)
+    );
+    assert!(context.state.lock().unwrap().records.is_empty());
+    assert!(context.dispatch.lock().unwrap().is_empty());
+}

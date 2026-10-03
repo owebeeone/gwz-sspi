@@ -12,7 +12,7 @@ mod owners;
 pub(crate) mod platform;
 pub(crate) mod ports;
 mod values;
-pub use api::{Conversation, Supervisor};
+pub use api::{CallerCapture, Conversation, Supervisor};
 pub use values::{
     Cancellation, CancellationReceipt, CleanupStatus, Deadline, Failure, Options, RecordId,
     ShutdownReport, WorkerExecutable,

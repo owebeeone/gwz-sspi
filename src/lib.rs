@@ -21,8 +21,8 @@ pub use values::{
 mod supervisor;
 
 pub use supervisor::{
-    Cancellation, CancellationReceipt, CleanupStatus, Conversation, Deadline, Failure, Options,
-    RecordId, ShutdownReport, Supervisor, WorkerExecutable,
+    CallerCapture, Cancellation, CancellationReceipt, CleanupStatus, Conversation, Deadline,
+    Failure, Options, RecordId, ShutdownReport, Supervisor, WorkerExecutable,
 };
 
 mod worker;

@@ -11,7 +11,8 @@ No runtime, network, core/Git or Python dependency is introduced.
 | Options | max_workers: u8; Default is eight, Supervisor::new checks 1–64. |
 | Deadline | new(Instant), instant(); immutable, no default or round extension. |
 | Cancellation | new()/Default, Clone, cancel(), is_cancelled(); shared owned signal. |
-| Supervisor | new(executable, options); start(request, deadline, cancellation); cleanup_status(RecordId); shutdown(separate_deadline). |
+| Supervisor | new(executable, options); capture_caller(); start_captured(&CallerCapture, request, deadline, cancellation); start(request, deadline, cancellation); cleanup_status(RecordId); shutdown(separate_deadline). |
+| CallerCapture | Opaque owned original-thread provenance; share through Arc, scoped to its issuing Supervisor. |
 | Conversation | step(&mut self, Option<SecretBytes>); finish(self); cancel(self). |
 | RecordId | opaque context-scoped checked monotonic identity; Clone/Eq/Debug, no caller constructor. |
 | Failure | kind(), native_status(), record_id(): Option<&RecordId>, cleanup_status(). Fixed diagnostics, no credential text. |
@@ -142,3 +143,50 @@ caller retains the completed future. Publication that loses a record to reaping
 recovers its saved terminal cause; it cannot replace cancellation/expiry with a
 new Protocol error. These obligations are checked with private fake ports and live
 wipe probes, independently of deferred Windows runtime qualification.
+
+## Capture before host handoff
+
+Capture on the original CLI or Python entry before fanout, detach, or submission.
+`capture_caller` does synchronous original-thread metadata/handle work without a
+hard OS time bound. It allocates no worker or capacity record. Its final Drop may
+close the held handle synchronously outside locks. `start_captured` synchronously validates only issuer identity, request profile
+and admission state; a different Supervisor returns InvalidRequest. Original
+held-thread liveness and identity are rechecked at charged launch, with no
+metadata query in captured-start or Future::poll. Concurrent starts share that Supervisor's FIFO
+capacity. Dropping the capture after creating Start does not invalidate its owned
+origin; dropping the issuing Supervisor still cancels its admitted work.
+
+The following recipe is compiled as a crate doctest. It creates the owned Start
+before host submission and proves positive Send + Sync + 'static capture traits.
+CallerCapture's negative Clone and Debug probes are on its API documentation.
+
+```rust
+use gwz_sspi::{AuthRequest, CallerCapture, Cancellation, Deadline, Failure,
+               Supervisor, TokenStep};
+use std::{future::Future, sync::Arc};
+fn capture_on_entry(supervisor: &Supervisor) -> Result<Arc<CallerCapture>, gwz_sspi::Error> {
+    fn require<T: Send + Sync + 'static>() {}
+    require::<CallerCapture>();
+    Ok(Arc::new(supervisor.capture_caller()?))
+}
+fn submit_owned(
+    supervisor: &Supervisor, caller: &CallerCapture, request: AuthRequest,
+    deadline: Deadline, cancellation: Cancellation,
+) -> impl Future<Output = Result<TokenStep, Failure>> + Send + 'static {
+    let start = supervisor.start_captured(caller, request, deadline, cancellation);
+    async move {
+        let mut conversation = start.await?;
+        let token = conversation.step(None).await?;
+        conversation.finish().await?;
+        Ok(token)
+    }
+}
+```
+
+Native Complete describes provider token production. A network host must
+independently validate the remote response, source/method consent, final-origin
+channel binding and the exclusive physical connection generation. The HTTPS
+composition keeps the one positive logical Open deadline through discovery,
+helpers and every native round; zero refuses native Begin. Nonempty initial
+Negotiate/NTLM offers and Digest are refused before Begin because this serial
+API cannot consume their initial challenge via `step(None)`.
