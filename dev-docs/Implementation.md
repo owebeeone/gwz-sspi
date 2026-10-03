@@ -1,6 +1,10 @@
 # SSPI implementation checkpoint
 
-2026-10-03. Repository/package/release scaffold only.
+2026-10-03. **Scaffold accepted** after independent Code/State GO on root
+e6772cbeda821deb7f2f42d63f73d9a3581e60ec and member
+bd807b0403d502fd6f25ef2f93389ce432f0c0c0. Repository/package/release
+structure only. The Code review's nonblocking missing packaged status link was
+corrected by including this file explicitly; extracted-archive links pass.
 
 Accepted design tuple in gwz-dev: root f2029e4b1739c0214138675dfb16abdb44f6a0d7,
 core d78a664e3c5a325c6f12be409eb7645c1c1b51d0, evidence

@@ -9,7 +9,7 @@ readme = "README.md"
 # Intended publication target; no GitHub remote is configured yet.
 repository = "https://github.com/owebeeone/gwz-sspi"
 publish = false
-include = ["/src/**", "/protocol/**", "/tests/**", "/scripts/**", "/docs/**", "/Cargo.toml", "/Cargo.lock", "/README.md", "/LICENSE", "/RELEASE.md"]
+include = ["/src/**", "/protocol/**", "/tests/**", "/scripts/**", "/docs/**", "/dev-docs/Implementation.md", "/Cargo.toml", "/Cargo.lock", "/README.md", "/LICENSE", "/RELEASE.md"]
 
 [workspace]
 resolver = "2"
