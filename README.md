@@ -4,7 +4,7 @@ Windows-specific SSPI authentication in a contained worker process, with a Rust
 caller API. The CLI can self-execute its worker entry; Python can bundle the
 matching standalone worker. This is not a network stream or generic worker system.
 
-**Status: caller values, private codec, parent supervision and shared serial Windows Negotiate/NTLM worker accepted within their bounded gates; installed-host packaging implemented pending review. Full Windows qualification and release remain gated.**
+**Status: caller values, private codec, parent supervision, shared serial Windows Negotiate/NTLM worker and installed-host packaging accepted within their bounded gates. HTTP/core composition, full Windows qualification and release remain gated.**
 The library compiles independently. The optional executable requires trusted
 compile-time packaging metadata and a valid inherited-pipe bootstrap. Publication is disabled in Cargo.toml until implementation review
 and Windows qualification pass. No configured remote or registry publication.
