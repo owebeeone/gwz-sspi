@@ -71,10 +71,10 @@ def identify(manifest, *, target, profile, features=(), options=None):
             if re.search(r'^\s*[^#\n=]*\brustc(?:-wrapper|-workspace-wrapper)?[\"\'\s]*=',path.read_text(),re.MULTILINE):raise RuntimeError('unsupported configured compiler override')
             configuration['config-'+str(len(configuration))]=hashlib.sha256(path.read_bytes()).hexdigest()
     environment={key:value for key,value in os.environ.items() if key.startswith(('CARGO_PROFILE_','CARGO_TARGET_')) and key!='CARGO_TARGET_DIR'}
-    for key in ('RUSTC','RUSTC_WRAPPER','RUSTC_WORKSPACE_WRAPPER','CC','CFLAGS','CXX','CXXFLAGS','AR','RANLIB','MACOSX_DEPLOYMENT_TARGET'):
+    for key in ('RUSTC','RUSTC_WRAPPER','RUSTC_WORKSPACE_WRAPPER','CC','CFLAGS','CXX','CXXFLAGS','AR','RANLIB','MACOSX_DEPLOYMENT_TARGET','CARGO_BUILD_RUSTFLAGS','CARGO_BUILD_TARGET'):
         if key in os.environ:environment[key]=os.environ[key]
     inputs={'target':target,'profile':profile,'features':sorted(features),'compiler':compiler,
-            'rustflags':os.environ.get('CARGO_ENCODED_RUSTFLAGS',os.environ.get('RUSTFLAGS','')),
+            'rustflags':{key:os.environ[key] for key in ('CARGO_ENCODED_RUSTFLAGS','RUSTFLAGS','CARGO_BUILD_RUSTFLAGS') if key in os.environ},
             'lock':hashlib.sha256(lock.read_bytes()).hexdigest(),
             'workspace_manifest':hashlib.sha256((Path(metadata['workspace_root'])/'Cargo.toml').read_bytes()).hexdigest(),
             'cargo_configuration':configuration,'build_environment':environment,'options':options or {}}
@@ -102,10 +102,33 @@ def bundle(wheel, worker, identifier, inputs):
             rows.append([name,'sha256='+encoded,str(len(data))])
     rows.append([record,'','']);stream=io.StringIO();csv.writer(stream).writerows(rows)
     records[record]=(records[record][0],stream.getvalue().encode())
-    temporary=wheel.with_suffix('.tmp')
+    import tempfile
+    descriptor,name=tempfile.mkstemp(prefix='.gwz-bundle-',suffix='.tmp',dir=wheel.parent);os.close(descriptor)
+    temporary=Path(name)
     try:
         with zipfile.ZipFile(temporary,'w',compression=zipfile.ZIP_DEFLATED) as output:
             for _,(info,data) in sorted(records.items()):output.writestr(info,data)
+        validate_wheel(temporary,identifier)
         temporary.replace(wheel)
     finally:
         temporary.unlink(missing_ok=True)
+
+
+def validate_wheel(wheel,identifier):
+    """Validate complete ZIP/RECORD and provisioned receipt before publication."""
+    import base64,csv,io,zipfile
+    with zipfile.ZipFile(wheel) as archive:
+        names=archive.namelist()
+        if len(names)!=len(set(names)) or any(Path(name).is_absolute() or '..' in Path(name).parts for name in names):raise RuntimeError('invalid wheel members')
+        records=[name for name in names if name.endswith('.dist-info/RECORD')]
+        if len(records)!=1:raise RuntimeError('invalid wheel RECORD')
+        record=records[0];rows=list(csv.reader(io.StringIO(archive.read(record).decode())))
+        if len(rows)!=len(names) or any(len(row)!=3 for row in rows) or {row[0] for row in rows}!=set(names):raise RuntimeError('incomplete wheel RECORD')
+        for name,digest,size in rows:
+            data=archive.read(name)
+            if name==record:
+                if digest or size:raise RuntimeError('invalid self RECORD')
+            elif digest!='sha256='+base64.urlsafe_b64encode(hashlib.sha256(data).digest()).rstrip(b'=').decode() or size!=str(len(data)):raise RuntimeError('invalid wheel digest')
+        if json.loads(archive.read('gwz/sspi-artifact-set.json'))['build_fingerprint']!=identifier:raise RuntimeError('wheel fingerprint mismatch')
+        workers=[name for name in names if name in ('gwz/gwz-sspi-worker','gwz/gwz-sspi-worker.exe')]
+        if len(workers)!=1:raise RuntimeError('missing packaged worker')

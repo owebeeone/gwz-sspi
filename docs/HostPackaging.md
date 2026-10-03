@@ -50,3 +50,10 @@ ordinary rustc compiler. Conventional Cargo config files from the workspace,
 invocation ancestry and Cargo home are fingerprinted; configured compiler
 overrides are conservatively refused without adding a Python3.11 parser.
 Host wrappers document installation/removal and artifact output locations.
+
+The producer conservatively records all supplied conventional rustflags channels:
+CARGO_BUILD_RUSTFLAGS, RUSTFLAGS, CARGO_ENCODED_RUSTFLAGS and target-specific Cargo
+rustflags, together with configuration-file digests. Even a supplied channel
+shadowed by precedence may change the identifier. Provisioned wheel validation
+checks complete RECORD hashes before the host backend publishes owned staging;
+receipts remain nonsecret diagnostic data and do not authenticate worker bytes.

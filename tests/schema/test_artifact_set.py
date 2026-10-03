@@ -49,6 +49,19 @@ class ArtifactSetTests(unittest.TestCase):
                 (config/'config.toml').write_text('[profile.release]\nlto = "thin"\n')
                 _,_,inputs=MODULE.identify(root/'Cargo.toml',target='host',profile='dev')
                 self.assertTrue(inputs['cargo_configuration'])
+    def test_every_conventional_rustflags_channel_distinguishes_inputs(self):
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);(root/'Cargo.toml').write_text('[package]');(root/'Cargo.lock').write_text('lock')
+            packages=[{'name':'gwz-sspi','version':'1','manifest_path':str(root/'Cargo.toml')}]
+            def identify(environment):
+                with mock.patch.dict(MODULE.os.environ,environment,clear=True),mock.patch.object(MODULE,'resolve',return_value=({'workspace_root':str(root)},packages,root/'Cargo.toml')),mock.patch.object(MODULE.subprocess,'check_output',return_value='fixed compiler'):
+                    return MODULE.identify(root/'Cargo.toml',target='host',profile='release')[0]
+            baseline=identify({})
+            for flags in ['-C target-cpu=generic','-C target-cpu=native']:
+                self.assertNotEqual(baseline,identify({'CARGO_BUILD_RUSTFLAGS':flags}))
+            for higher in [{},{'RUSTFLAGS':'higher'},{'CARGO_ENCODED_RUSTFLAGS':'highest'},{'CARGO_TARGET_HOST_RUSTFLAGS':'target'}]:
+                self.assertNotEqual(identify({**higher,'CARGO_BUILD_RUSTFLAGS':'one'}),identify({**higher,'CARGO_BUILD_RUSTFLAGS':'two'}))
     def test_wheel_executable_receipt_and_every_record_hash_are_installed_together(self):
         import base64,csv,hashlib,io,json,zipfile
         with tempfile.TemporaryDirectory() as directory:
