@@ -102,3 +102,24 @@ full identity/impersonation qualification, installed host provenance or HTTP/Git
 success. Job kill is containment, never a physical wipe or external LSASS/provider
 abort claim. Native execution results belong to the owner/evidence campaign and
 must be distinguished from cross-target checks.
+
+## Local completed-provider and caller-handoff fixtures
+
+The same ignored `native_worker` command also runs `windows::completion` tests.
+These use the production Supervisor/worker and a local native inbound verifier:
+NTLM completes on both sides; Negotiate completes selecting NTLM; a differing
+synthetic binding must be rejected by the native verifier. The verifier's
+accepted context yields an OS token whose handle is closed without recording
+identity. No account/password provisioning or system policy change occurs.
+
+Origin tests move capture from a still-live original thread, refuse a retired
+origin, and refuse self-impersonation on a fresh original thread. That thread
+restores itself before exit and checks capture again. Idle worker cancellation
+and original deadline expiry require confirmed cleanup and empty shutdown.
+
+Bindings are synthetic on both sides. These rows do not prove TLS certificate
+provenance, EPA-required HTTPS-server behavior, Kerberos, explicit-password
+authentication, differing-account/SID equality, blocked-provider cancellation,
+installed CLI/Python provenance or Git success. Run with an external campaign
+process timeout as for existing native fixtures: the verifier itself makes
+synchronous SSPI calls. Default fast tests still ignore these fixtures.
