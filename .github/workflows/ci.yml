@@ -19,9 +19,11 @@ jobs:
         os: [ubuntu-24.04, macos-14, windows-2025]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
-    env:
-      CARGO_TARGET_DIR: ${{ runner.temp }}/gwz-sspi-target
     steps:
+      - name: Keep build outputs outside the checkout
+        shell: bash
+        run: |
+          echo "CARGO_TARGET_DIR=$RUNNER_TEMP/gwz-sspi-target" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
@@ -57,9 +59,11 @@ jobs:
       matrix:
         target: [x86_64-pc-windows-msvc, x86_64-pc-windows-gnu]
     timeout-minutes: 15
-    env:
-      CARGO_TARGET_DIR: ${{ runner.temp }}/gwz-sspi-cross-target
     steps:
+      - name: Keep build outputs outside the checkout
+        shell: bash
+        run: |
+          echo "CARGO_TARGET_DIR=$RUNNER_TEMP/gwz-sspi-cross-target" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
@@ -76,10 +80,13 @@ jobs:
     runs-on: windows-2025
     timeout-minutes: 15
     env:
-      CARGO_TARGET_DIR: ${{ runner.temp }}/gwz-sspi-native-target
-      GWZ_SSPI_NATIVE_SCRATCH: ${{ runner.temp }}/gwz-sspi-native-scratch
       GWZ_SSPI_BUILD_FINGERPRINT: '4242424242424242424242424242424242424242424242424242424242424242'
     steps:
+      - name: Keep build outputs outside the checkout
+        shell: bash
+        run: |
+          echo "CARGO_TARGET_DIR=$RUNNER_TEMP/gwz-sspi-native-target" >> "$GITHUB_ENV"
+          echo "GWZ_SSPI_NATIVE_SCRATCH=$RUNNER_TEMP/gwz-sspi-native-scratch" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
