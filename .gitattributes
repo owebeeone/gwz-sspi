@@ -1,0 +1,3 @@
+# The schema tests compare generated artifacts, and the documents they are
+# generated from, byte for byte, so every platform checks text out with LF.
+* text=auto eol=lf
