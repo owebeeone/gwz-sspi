@@ -132,8 +132,8 @@ the GitHub repository, github.com/owebeeone/gwz-sspi, is configured and public.
 
 After the implementation gates pass:
 
-1. Create/configure the actual origin and main branch, and commit clean source
-   through GWZ during ordinary workspace development.
+1. Commit clean source to main through GWZ during ordinary workspace
+   development (origin is configured; see above).
 2. Arrange first crates.io registration and the trusted publisher for this exact
    repository, release.yml workflow and crates-io environment. The first
    registration is .github/workflows/bootstrap-crate.yml, run once by hand with
@@ -146,6 +146,11 @@ After the implementation gates pass:
 4. Run gearu plan with the intended version; inspect it, then authorize Gearu's
    release operation explicitly. Gearu release creates a commit/tag locally;
    --push and --github-release are separate external actions.
+
+Gearu's `checks` run the format, lint and test gates on the uncommitted
+candidate; its `exact_checks` (`release_checks.py --exact`) package the release
+commit, because `cargo package` refuses uncommitted files. Both stages refuse
+while publish=false stands, and release.yml reruns both on the tag.
 
 Gearu is the selected release-preparation tool, including its deliberate release
 commit/tag mechanism; ordinary development Git mutations still use GWZ. Managed

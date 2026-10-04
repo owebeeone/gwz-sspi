@@ -3,7 +3,6 @@ name = "gwz-sspi"
 branch = "main"
 remote = "origin"
 tag_prefix = "v"
-# Intended repository; configure the real origin before Gearu plan/release.
 github_repo = "owebeeone/gwz-sspi"
 
 [rust]
@@ -12,7 +11,10 @@ lockfile = "Cargo.lock"
 lock_command = ["cargo", "generate-lockfile", "--offline"]
 
 [release]
+# The candidate stage runs the format, lint and test gates; the exact stage
+# packages the release commit, since cargo package refuses the uncommitted
+# candidate.
 checks = [["python3", "scripts/release_checks.py", "--version", "{version}"]]
-exact_checks = [["python3", "scripts/release_checks.py", "--version", "{version}"]]
+exact_checks = [["python3", "scripts/release_checks.py", "--version", "{version}", "--exact"]]
 commit_message = "chore(release): {name} {version}"
 github_notes = "{name} {tag}. See RELEASE.md for scope and qualification."

@@ -36,6 +36,7 @@ jobs:
           if os.environ["RELEASE_TAG"] != f"v{version}":
               raise SystemExit("release tag and Cargo version differ")
           subprocess.run(["python3", "scripts/release_checks.py", "--version", version], check=True)
+          subprocess.run(["python3", "scripts/release_checks.py", "--version", version, "--exact"], check=True)
           PY
       - name: Authenticate using Trusted Publishing
         id: auth
