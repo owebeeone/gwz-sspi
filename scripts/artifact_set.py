@@ -61,7 +61,8 @@ def identify(manifest, *, target, profile, features=(), options=None):
     compiler=subprocess.check_output(['rustc','-vV'],text=True)
     lock=Path(metadata['workspace_root'])/'Cargo.lock'
     configuration={}
-    directories=[Path(metadata['workspace_root'])/'.cargo',*[path/'.cargo' for path in [Path.cwd(),*Path.cwd().parents]],Path(os.environ.get('CARGO_HOME',Path.home()/'.cargo'))]
+    cargo_home=Path(os.environ['CARGO_HOME']) if 'CARGO_HOME' in os.environ else Path.home()/'.cargo'
+    directories=[Path(metadata['workspace_root'])/'.cargo',*[path/'.cargo' for path in [Path.cwd(),*Path.cwd().parents]],cargo_home]
     paths=list(dict.fromkeys(path/name for path in directories for name in ('config','config.toml')))
     for path in paths:
         if path.is_file():
