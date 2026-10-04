@@ -2,4 +2,7 @@
 #[cfg(windows)]
 mod windows {
     include!("native/windows_worker.rs");
+    mod completion {
+        include!("native/completion.rs");
+    }
 }
