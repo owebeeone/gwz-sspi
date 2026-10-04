@@ -19,9 +19,13 @@ jobs:
         os: [ubuntu-24.04, macos-14, windows-2025]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
+    defaults:
+      run:
+        # Windows' default shell, PowerShell, fails a step only on its last
+        # command's exit status; bash fails it on the first command that fails.
+        shell: bash
     steps:
       - name: Keep build outputs outside the checkout
-        shell: bash
         run: |
           echo "CARGO_TARGET_DIR=$RUNNER_TEMP/gwz-sspi-target" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
