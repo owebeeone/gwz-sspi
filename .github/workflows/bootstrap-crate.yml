@@ -1,0 +1,44 @@
+# Register the gwz-sspi name on crates.io with a placeholder prerelease, once.
+#
+# crates.io lets a trusted publisher be configured only for a crate that already
+# exists, so the name's first publication needs an API token. This workflow
+# publishes .github/bootstrap-crate (gwz-sspi 0.0.0-bootstrap.1: no implementation,
+# no dependencies; a prerelease no ordinary version requirement selects) with the
+# CRATES_IO_BOOTSTRAP_TOKEN secret. It never touches the real crate, whose
+# publish = false gate stays until its reviewed activation (RELEASE.md).
+#
+# Afterwards: delete the secret, revoke the token, and configure the crate's
+# trusted publisher as owner owebeeone, repository gwz-sspi, workflow
+# release.yml, environment crates-io. Every later release is published only by
+# release.yml, through Trusted Publishing.
+name: Bootstrap crate on crates.io
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crates-io-bootstrap
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'owebeeone/gwz-sspi'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install Rust
+        run: rustup toolchain install 1.95.0 --profile minimal
+      - name: Inspect bootstrap package
+        run: cargo package --list --locked --manifest-path .github/bootstrap-crate/Cargo.toml
+      - name: Verify bootstrap package
+        run: cargo publish --dry-run --locked --manifest-path .github/bootstrap-crate/Cargo.toml
+      - name: Publish bootstrap prerelease
+        run: cargo publish --locked --manifest-path .github/bootstrap-crate/Cargo.toml
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_BOOTSTRAP_TOKEN }}

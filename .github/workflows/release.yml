@@ -1,4 +1,4 @@
-name: Publish gwz-sspi
+name: Release gwz-sspi
 on:
   release:
     types: [published]
