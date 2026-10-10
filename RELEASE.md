@@ -123,6 +123,14 @@ package publication and documentation deployment where configured.
 
 ## SSPI release gate
 
+**Activated 2026-10-11 by the operator** (gwz-dev transport program): `publish = false` is lifted
+so that gwz-sspi 0.1.0 can be published to crates.io ahead of the gwz transport's Windows
+qualification. The operator chose this deliberately, knowing that the implementation acceptance
+and Windows qualification below are not yet complete. Nothing consumes the crate from crates.io
+until a gwz-cli release does, and gwz-cli's own release gates still apply. The text below records
+the gate as it was designed.
+
+
 This repository is scaffold-only. Cargo.toml has publish=false and the release
 check refuses preparation/publication until that guard is deliberately lifted
 following implementation acceptance and Windows qualification. Do not bypass it

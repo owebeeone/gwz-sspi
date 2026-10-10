@@ -6,9 +6,8 @@ rust-version = "1.95"
 license = "GPL-2.0-only"
 description = "Contained Windows SSPI authentication conversations for Rust hosts"
 readme = "README.md"
-# Published only by .github/workflows/release.yml, once publish = false is lifted (RELEASE.md).
+# Published only by .github/workflows/release.yml (RELEASE.md); activated by the operator on 2026-10-11.
 repository = "https://github.com/owebeeone/gwz-sspi"
-publish = false
 include = ["/src/**", "/protocol/**", "/tests/**", "/scripts/**", "/docs/**", "/dev-docs/Implementation.md", "/Cargo.toml", "/Cargo.lock", "/rust-toolchain.toml", "/README.md", "/LICENSE", "/RELEASE.md"]
 
 [workspace]
