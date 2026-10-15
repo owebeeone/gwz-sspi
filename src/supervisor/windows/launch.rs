@@ -107,9 +107,10 @@ pub(super) struct Ends {
     pub(super) stderr: Handle,
 }
 /// The creation window: the worker's ends are inheritable from [`InheritWindow::open`]
-/// to its drop and at no other time, so a concurrent spawn that inherits every
-/// inheritable handle (std `Command`, the git CLI) cannot take them. It spans only
-/// the `CreateProcessW` call and closes on every path, a failed call included.
+/// to its drop and at no other time. It spans the `CreateProcessW` call and closes on
+/// every path, a failed call included. During it, a concurrent spawn that names no
+/// handle list (std `Command`, the git CLI) still inherits the ends; only a host that
+/// serializes such spawns with this launch closes that.
 pub(super) struct InheritWindow<'a> {
     ends: &'a Ends,
 }

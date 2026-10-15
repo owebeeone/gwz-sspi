@@ -13,6 +13,10 @@ Windows launch only; no change to the public API, the wire protocol or the worke
   token-carrying pipes, and a worker that died would not give the parent an end-of-file while
   the other process held them. The worker's own inheritance is unchanged: its explicit
   `PROC_THREAD_ATTRIBUTE_HANDLE_LIST` still names exactly those three handles.
+- What remains: during the `CreateProcessW` call itself (milliseconds, longer under an
+  antivirus scan) a concurrent spawn that names no handle list still inherits the three
+  child-side handles. A host closes that only by serializing such spawns with worker launch;
+  0.1.1 has no API for the host to do so.
 - New Windows tests: no end of a new pipe is inheritable, the NUL handle is not inheritable,
   the child ends are inheritable only inside the creation window, and a forced
   `CreateProcessW` failure leaves them closed to inheritance.

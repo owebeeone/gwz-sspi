@@ -70,8 +70,10 @@ and NUL stderr. Membership is verified before resume; there is no Assign fallbac
 Exact trusted absolute application path, private numeric bootstrap, OS-derived
 minimal environment/cwd and anonymous pipes are owned internally. Every pipe end and the
 NUL stderr are created noninheritable; the three child-side handles are inheritable only
-inside the `CreateProcessW` call (an `InheritWindow` guard that closes on every path), so a
-concurrent spawn that inherits all inheritable handles never receives one. Child-end copies
+from just before to just after the `CreateProcessW` call (an `InheritWindow` guard that closes
+on every path). During that window a concurrent spawn that names no handle list (std
+`Command`) still inherits them, so a host must serialize such spawns with worker launch; this
+crate offers no hook for that yet. Child-end copies
 close promptly. Attribute memory and boxed referenced arrays survive until Delete,
 as required by [Microsoft's attribute lifetime contract](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-updateprocthreadattribute).
 [CancelSynchronousIo is advisory](https://learn.microsoft.com/en-us/windows/win32/api/ioapiset/nf-ioapiset-cancelsynchronousio);
