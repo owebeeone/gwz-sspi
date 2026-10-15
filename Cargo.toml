@@ -1,6 +1,6 @@
 [package]
 name = "gwz-sspi"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 rust-version = "1.95"
 license = "GPL-2.0-only"
@@ -8,7 +8,7 @@ description = "Contained Windows SSPI authentication conversations for Rust host
 readme = "README.md"
 # Published only by .github/workflows/release.yml (RELEASE.md); activated by the operator on 2026-10-11.
 repository = "https://github.com/owebeeone/gwz-sspi"
-include = ["/src/**", "/protocol/**", "/tests/**", "/scripts/**", "/docs/**", "/dev-docs/Implementation.md", "/Cargo.toml", "/Cargo.lock", "/rust-toolchain.toml", "/README.md", "/LICENSE", "/RELEASE.md"]
+include = ["/src/**", "/protocol/**", "/tests/**", "/scripts/**", "/docs/**", "/dev-docs/Implementation.md", "/Cargo.toml", "/Cargo.lock", "/rust-toolchain.toml", "/README.md", "/LICENSE", "/RELEASE.md", "/CHANGELOG.md"]
 
 [workspace]
 resolver = "2"

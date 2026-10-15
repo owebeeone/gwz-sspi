@@ -99,3 +99,4 @@ fn worker_eof_before_begin_and_after_initial_token_closes_owned_pipes() {
 }
 include!("fixture_support.rs");
 include!("containment_tests.rs");
+include!("inheritance_tests.rs");

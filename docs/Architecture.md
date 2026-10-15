@@ -68,7 +68,10 @@ Windows creation uses an unnamed KILL_ON_JOB_CLOSE Job, no breakaway, suspended
 STARTUPINFOEX JOB_LIST plus an explicit HANDLE_LIST for exactly the child pipe ends
 and NUL stderr. Membership is verified before resume; there is no Assign fallback.
 Exact trusted absolute application path, private numeric bootstrap, OS-derived
-minimal environment/cwd and anonymous pipes are owned internally. Child-end copies
+minimal environment/cwd and anonymous pipes are owned internally. Every pipe end and the
+NUL stderr are created noninheritable; the three child-side handles are inheritable only
+inside the `CreateProcessW` call (an `InheritWindow` guard that closes on every path), so a
+concurrent spawn that inherits all inheritable handles never receives one. Child-end copies
 close promptly. Attribute memory and boxed referenced arrays survive until Delete,
 as required by [Microsoft's attribute lifetime contract](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-updateprocthreadattribute).
 [CancelSynchronousIo is advisory](https://learn.microsoft.com/en-us/windows/win32/api/ioapiset/nf-ioapiset-cancelsynchronousio);
