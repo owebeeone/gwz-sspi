@@ -129,9 +129,9 @@ fn suspended(no_kill: bool) -> Guard<Suspended, Empty> {
             )
         })
         .unwrap();
-        launch::create_in_job(&executable(), origin, job).unwrap()
+        launch::create_in_job(&executable(), origin, job, None).unwrap()
     } else {
-        launch::create_owned(&executable(), origin).unwrap()
+        launch::create_owned(&executable(), origin, None).unwrap()
     };
     let owner = Guard::new(Suspended(Some(owned)), Empty, proof);
     assert!(owner.owner.0.as_ref().unwrap().contained);

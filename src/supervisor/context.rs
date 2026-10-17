@@ -86,12 +86,15 @@ pub(super) struct Context {
     pub(super) capacity: usize,
     pub(super) platform: Arc<dyn Platform>,
     pub(super) executable: WorkerExecutable,
+    /// The host's callback around the platform's creation window, if it gave one.
+    pub(super) launch_guard: Option<LaunchGuard>,
 }
 impl Context {
     pub(super) fn new(
         executable: WorkerExecutable,
         capacity: usize,
         platform: Arc<dyn Platform>,
+        launch_guard: Option<LaunchGuard>,
     ) -> Arc<Self> {
         Arc::new(Self {
             state: Mutex::new(State {
@@ -109,6 +112,7 @@ impl Context {
             capacity,
             platform,
             executable,
+            launch_guard,
         })
     }
     pub(super) fn id(&self, sequence: u64) -> RecordId {

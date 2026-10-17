@@ -47,6 +47,45 @@ impl Options {
         Ok(self)
     }
 }
+/// The host's callback around gwz-sspi's worker-creation window (0.1.2).
+///
+/// On Windows the worker's pipe ends are inheritable for the length of one `CreateProcessW`
+/// call, and a concurrent spawn that names no handle list (a std `Command`, the git command
+/// line) inherits every handle that is inheritable at that moment. A host that makes such
+/// spawns serializes them with the window by passing the callback to
+/// [`Supervisor::with_launch_guard`]: before gwz-sspi opens the window for a worker it calls the
+/// callback, which returns an owned value, and it drops that value after the window has closed
+/// and `CreateProcessW` has returned. The host's callback takes its spawn gate and returns the
+/// hold, so the gate is held for exactly the window and the host's own spawns take it too.
+///
+/// The callback runs on gwz-sspi's launch thread for that worker, once for each launch, and
+/// only for a launch that reaches the window (a launch refused or cancelled earlier takes
+/// none). It may block, for as long as the host's other spawns hold what it waits for; the
+/// launch waits with it, and a deadline or cancellation that falls meanwhile is acted on once
+/// the launch returns, as for any launch. It must not call back into gwz-sspi. Cloning the guard
+/// shares the callback.
+#[derive(Clone)]
+pub struct LaunchGuard(Arc<dyn Fn() -> Box<dyn Send> + Send + Sync>);
+impl LaunchGuard {
+    /// Wrap `guard`, whose returned value is held for the creation window and dropped after it.
+    pub fn new<F, G>(guard: F) -> Self
+    where
+        F: Fn() -> G + Send + Sync + 'static,
+        G: Send + 'static,
+    {
+        Self(Arc::new(move || Box::new(guard()) as Box<dyn Send>))
+    }
+    /// Take the guard once, as a launch does; dropping the result releases it. A host uses this
+    /// to test the callback it installs.
+    pub fn hold(&self) -> Box<dyn Send> {
+        (self.0)()
+    }
+}
+impl std::fmt::Debug for LaunchGuard {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("LaunchGuard").finish_non_exhaustive()
+    }
+}
 /// Immutable absolute monotonic parent deadline, with no default or extension.
 #[derive(Clone, Copy, Debug)]
 pub struct Deadline(Instant);

@@ -124,6 +124,7 @@ fn poll_only_queues_charged_launch_and_keeps_original_capture_when_moved() {
         WorkerExecutable::new(base.executable.path.clone(), base.executable.build).unwrap(),
         1,
         platform,
+        None,
     );
     let supervisor = Supervisor {
         context: context.clone(),

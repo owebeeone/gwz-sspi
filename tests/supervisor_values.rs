@@ -1,4 +1,6 @@
-use gwz_sspi::{Cancellation, Deadline, ErrorKind, Options, Supervisor, WorkerExecutable};
+use gwz_sspi::{
+    Cancellation, Deadline, ErrorKind, LaunchGuard, Options, Supervisor, WorkerExecutable,
+};
 use std::path::PathBuf;
 use std::time::Instant;
 
@@ -41,4 +43,66 @@ fn owned_future_contract(
     drop(supervisor);
     accept_owned(start);
     accept_owned(shutdown);
+}
+
+fn synthetic_worker() -> WorkerExecutable {
+    WorkerExecutable::new(
+        std::env::current_dir().unwrap().join("synthetic-worker"),
+        [0; 32],
+    )
+    .unwrap()
+}
+
+#[test]
+fn a_supervisor_with_a_launch_guard_validates_its_options_like_any_other() {
+    let taken = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    for max_workers in [0, 65] {
+        let counted = taken.clone();
+        let guard = LaunchGuard::new(move || {
+            counted.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        });
+        let error =
+            Supervisor::with_launch_guard(synthetic_worker(), Options { max_workers }, guard)
+                .err()
+                .unwrap();
+        assert_eq!(error.kind(), ErrorKind::InvalidRequest);
+    }
+    assert_eq!(
+        taken.load(std::sync::atomic::Ordering::SeqCst),
+        0,
+        "construction launches nothing, so it takes no guard"
+    );
+}
+
+#[cfg(not(windows))]
+#[test]
+fn a_supervisor_with_a_launch_guard_is_as_unsupported_as_any_other_off_windows() {
+    let guard = LaunchGuard::new(|| ());
+    let error = Supervisor::with_launch_guard(synthetic_worker(), Options::default(), guard)
+        .err()
+        .unwrap();
+    assert_eq!(error.kind(), ErrorKind::UnsupportedPlatform);
+}
+
+#[test]
+fn a_launch_guard_is_a_shareable_callback_that_holds_an_owned_value_until_dropped() {
+    fn shareable<T: Clone + Send + Sync + 'static>() {}
+    shareable::<LaunchGuard>();
+    let held = std::sync::Arc::new(());
+    let kept = held.clone();
+    // The value the callback returns need only be `Send`: a non-`Sync` one is fine.
+    let guard = LaunchGuard::new(move || std::cell::Cell::new(kept.clone()));
+    assert_eq!(std::sync::Arc::strong_count(&held), 2);
+    let taken = guard.hold();
+    assert_eq!(
+        std::sync::Arc::strong_count(&held),
+        3,
+        "the hold owns a clone"
+    );
+    drop(taken);
+    assert_eq!(
+        std::sync::Arc::strong_count(&held),
+        2,
+        "dropping it releases"
+    );
 }

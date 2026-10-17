@@ -4,7 +4,7 @@ mod handles;
 mod identity;
 mod launch;
 use super::super::ports::{Launched, Origin, Platform, Primary};
-use super::super::values::WorkerExecutable;
+use super::super::values::{LaunchGuard, WorkerExecutable};
 use crate::Error;
 use std::sync::Arc;
 struct System {
@@ -21,8 +21,9 @@ impl Platform for System {
         &self,
         executable: &WorkerExecutable,
         origin: Box<dyn Origin>,
+        guard: Option<&LaunchGuard>,
     ) -> Result<Launched, Error> {
-        launch::create(executable, origin)
+        launch::create(executable, origin, guard)
     }
 }
 pub(in crate::supervisor) fn system() -> Result<Arc<dyn Platform>, Error> {

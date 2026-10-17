@@ -123,3 +123,42 @@ fn production_worker_initial_negotiate_observation_is_local() {
     wait(conversation.finish()).unwrap();
     assert!(wait(supervisor.shutdown(deadline())).outstanding.is_empty());
 }
+#[test]
+#[ignore = "opt-in production Windows worker launched under a host launch guard"]
+fn the_hosts_launch_guard_is_taken_once_for_each_worker_and_released() {
+    use gwz_sspi::LaunchGuard;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    struct Released(Arc<AtomicUsize>);
+    impl Drop for Released {
+        fn drop(&mut self) {
+            self.0.fetch_add(1, Ordering::SeqCst);
+        }
+    }
+    let (taken, released) = (Arc::new(AtomicUsize::new(0)), Arc::new(AtomicUsize::new(0)));
+    let guard = {
+        let (taken, released) = (taken.clone(), released.clone());
+        LaunchGuard::new(move || {
+            taken.fetch_add(1, Ordering::SeqCst);
+            Released(released.clone())
+        })
+    };
+    let supervisor = Supervisor::with_launch_guard(
+        WorkerExecutable::new(
+            std::path::PathBuf::from(env!("CARGO_BIN_EXE_gwz-sspi-worker")),
+            [0x42; 32],
+        )
+        .unwrap(),
+        Options::default(),
+        guard,
+    )
+    .unwrap();
+    for launches in 1..=2 {
+        let conversation =
+            wait(supervisor.start(request(false), deadline(), Cancellation::new())).unwrap();
+        // The worker has answered with its Hello, so its launch is over and its guard is released.
+        assert_eq!(taken.load(Ordering::SeqCst), launches);
+        assert_eq!(released.load(Ordering::SeqCst), launches);
+        wait(conversation.finish()).unwrap();
+    }
+    assert!(wait(supervisor.shutdown(deadline())).outstanding.is_empty());
+}

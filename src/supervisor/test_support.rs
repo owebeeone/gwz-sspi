@@ -42,7 +42,12 @@ impl Platform for FakePlatform {
             checks: self.checks.clone(),
         }))
     }
-    fn launch(&self, _: &WorkerExecutable, _: Box<dyn Origin>) -> Result<Launched, Error> {
+    fn launch(
+        &self,
+        _: &WorkerExecutable,
+        _: Box<dyn Origin>,
+        _: Option<&LaunchGuard>,
+    ) -> Result<Launched, Error> {
         panic!("pure tests must not dispatch an OS launch")
     }
 }
@@ -64,6 +69,7 @@ fn context(capacity: usize) -> Arc<Context> {
             captures: Arc::new(AtomicUsize::new(0)),
             checks: Arc::new(AtomicUsize::new(0)),
         }),
+        None,
     )
 }
 fn request() -> AuthRequest {

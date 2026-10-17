@@ -1,5 +1,5 @@
 //! Narrow owned OS ports, private to contained SSPI supervision.
-use super::values::WorkerExecutable;
+use super::values::{LaunchGuard, WorkerExecutable};
 use crate::{Error, SecretBytes};
 use std::sync::Arc;
 use std::thread::JoinHandle;
@@ -33,10 +33,12 @@ pub(super) trait Platform: Send + Sync {
     fn primary(&self) -> &Primary;
     fn capture_origin(&self) -> Result<Box<dyn Origin>, Error>;
     /// Err guarantees that CreateProcess did not succeed. After success, return
-    /// owned held process/Job even if containment verification refused.
+    /// owned held process/Job even if containment verification refused. `guard`,
+    /// when the host gave one, is held around the creation window and no longer.
     fn launch(
         &self,
         executable: &WorkerExecutable,
         origin: Box<dyn Origin>,
+        guard: Option<&LaunchGuard>,
     ) -> Result<Launched, Error>;
 }

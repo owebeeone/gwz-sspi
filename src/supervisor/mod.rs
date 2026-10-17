@@ -14,8 +14,8 @@ pub(crate) mod ports;
 mod values;
 pub use api::{CallerCapture, Conversation, Supervisor};
 pub use values::{
-    Cancellation, CancellationReceipt, CleanupStatus, Deadline, Failure, Options, RecordId,
-    ShutdownReport, WorkerExecutable,
+    Cancellation, CancellationReceipt, CleanupStatus, Deadline, Failure, LaunchGuard, Options,
+    RecordId, ShutdownReport, WorkerExecutable,
 };
 #[cfg(test)]
 mod kernel_tests {
@@ -38,6 +38,7 @@ mod tests {
         include!("orchestration_support.rs");
         include!("orchestration_tests.rs");
         include!("orchestration_schedule_tests.rs");
+        include!("launch_guard_tests.rs");
     }
     mod remediation {
         use super::*;

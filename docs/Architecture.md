@@ -72,9 +72,24 @@ minimal environment/cwd and anonymous pipes are owned internally. Every pipe end
 NUL stderr are created noninheritable; the three child-side handles are inheritable only
 from just before to just after the `CreateProcessW` call (an `InheritWindow` guard that closes
 on every path). During that window a concurrent spawn that names no handle list (std
-`Command`) still inherits them, so a host must serialize such spawns with worker launch; this
-crate offers no hook for that yet. Child-end copies
-close promptly. Attribute memory and boxed referenced arrays survive until Delete,
+`Command`) still inherits them, so a host that makes such spawns serializes them with worker
+launch through the launch guard below. Child-end copies
+close promptly.
+
+Launch guard (0.1.2). `Supervisor::with_launch_guard(executable, options, guard)` is
+`Supervisor::new` plus a host callback, `LaunchGuard`: a `Send + Sync` closure that returns an
+owned value. The launch calls it after the originating-thread recheck and before
+`InheritWindow::open`, and drops the returned value after the window has closed and
+`CreateProcessW` has returned, on every path that reaches the window (a failed call included).
+The host fills it with its spawn gate: the closure takes the gate and returns the hold, and the
+host's own spawns that name no handle list take the same gate, so none overlaps a window. The
+closure runs on the launch thread, once for each worker, and a launch refused or cancelled
+before the window takes none. It may block while the host's other spawns hold the gate; the
+launch waits with it, its record stays charged, and a deadline or cancellation that falls
+meanwhile is acted on when the launch returns. Without a guard (`Supervisor::new`) the launch is
+0.1.1's. The callback is a separate argument because `Options` is `Copy` with public fields; a
+field would break struct-literal callers. The guard does not cover a spawn by a host that does
+not take its gate, or a handle inherited some other way. Attribute memory and boxed referenced arrays survive until Delete,
 as required by [Microsoft's attribute lifetime contract](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-updateprocthreadattribute).
 [CancelSynchronousIo is advisory](https://learn.microsoft.com/en-us/windows/win32/api/ioapiset/nf-ioapiset-cancelsynchronousio);
 [ReadFile storage must remain live through completion](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-readfile).

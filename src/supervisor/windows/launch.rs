@@ -1,7 +1,7 @@
 //! Exact executable, private anonymous pipes and creation-time Job membership.
 use super::super::super::{
     ports::{Launched, Origin},
-    values::WorkerExecutable,
+    values::{LaunchGuard, WorkerExecutable},
 };
 use super::{
     attributes::Attributes,
@@ -110,7 +110,9 @@ pub(super) struct Ends {
 /// to its drop and at no other time. It spans the `CreateProcessW` call and closes on
 /// every path, a failed call included. During it, a concurrent spawn that names no
 /// handle list (std `Command`, the git CLI) still inherits the ends; only a host that
-/// serializes such spawns with this launch closes that.
+/// serializes such spawns with this launch closes that, through the [`LaunchGuard`] it
+/// gives the supervisor, which [`start`] holds from before the window opens to after it
+/// closes.
 pub(super) struct InheritWindow<'a> {
     ends: &'a Ends,
 }
@@ -133,12 +135,15 @@ impl Drop for InheritWindow<'_> {
         }
     }
 }
-/// Creates the suspended worker in `job`. The ends are inheritable only inside this call.
+/// Creates the suspended worker in `job`. The ends are inheritable only inside this call,
+/// and `guard`, when the host gave one, is held from before they turn inheritable to after
+/// they have turned back and `CreateProcessW` has returned, on every path that reaches it.
 pub(super) fn start(
     executable: &WorkerExecutable,
     origin: &dyn Origin,
     job: &Handle,
     ends: &Ends,
+    guard: Option<&LaunchGuard>,
 ) -> Result<(Handle, Handle), Error> {
     let mut attributes = Attributes::new(job, [ends.input.0, ends.output.0, ends.stderr.0])?;
     let application: Vec<u16> = executable
@@ -178,6 +183,9 @@ pub(super) fn start(
     // Charged owner rechecks original-thread impersonation and current primary
     // immediately before creation. These synchronous metadata calls never poll.
     origin.verify()?;
+    // The host's guard comes first and goes last: no spawn of the host's that takes it overlaps the
+    // window. A failure from here on drops it with the rest of the frame.
+    let held = guard.map(LaunchGuard::hold);
     let window = InheritWindow::open(ends)?;
     // SAFETY: all pointer storage and attribute references remain alive through
     // this call and Delete. Exact application, double-NUL environment and cwd.
@@ -198,8 +206,9 @@ pub(super) fn start(
             &mut process,
         )
     };
-    // The window closes before anything else is done, created or not.
+    // The window closes before anything else is done, created or not, and the guard after it.
     drop(window);
+    drop(held);
     drop(attributes);
     if created == 0 {
         return Err(Error::new(ErrorKind::WorkerUnavailable));
@@ -217,8 +226,9 @@ pub(super) struct OwnedLaunch {
 pub(super) fn create(
     executable: &WorkerExecutable,
     origin: Box<dyn Origin>,
+    guard: Option<&LaunchGuard>,
 ) -> Result<Launched, Error> {
-    let result = create_owned(executable, origin)?;
+    let result = create_owned(executable, origin, guard)?;
     Ok(Launched {
         child: std::sync::Arc::new(result.process),
         reader: Box::new(result.reader),
@@ -229,6 +239,7 @@ pub(super) fn create(
 pub(super) fn create_owned(
     executable: &WorkerExecutable,
     origin: Box<dyn Origin>,
+    guard: Option<&LaunchGuard>,
 ) -> Result<OwnedLaunch, Error> {
     // SAFETY: unnamed noninheritable Job; sole owned handle returned on success.
     let job = Handle::new(unsafe { CreateJobObjectW(std::ptr::null(), std::ptr::null()) })?;
@@ -246,7 +257,7 @@ pub(super) fn create_owned(
     {
         return Err(containment());
     }
-    create_in_job(executable, origin, job)
+    create_in_job(executable, origin, job, guard)
 }
 // Production always supplies the configured kill-on-close Job above. Test-only
 // fixtures may supply their independently owned no-kill Job as a negative control.
@@ -254,6 +265,7 @@ pub(super) fn create_in_job(
     executable: &WorkerExecutable,
     origin: Box<dyn Origin>,
     job: Handle,
+    guard: Option<&LaunchGuard>,
 ) -> Result<OwnedLaunch, Error> {
     let (child_input, parent_input) = pipe()?;
     let (parent_output, child_output) = pipe()?;
@@ -262,7 +274,7 @@ pub(super) fn create_in_job(
         output: child_output,
         stderr: nul()?,
     };
-    let (process_handle, thread_handle) = start(executable, origin.as_ref(), &job, &ends)?;
+    let (process_handle, thread_handle) = start(executable, origin.as_ref(), &job, &ends, guard)?;
     // The worker has its own copies of the child ends.
     drop(ends);
     let mut member = 0;

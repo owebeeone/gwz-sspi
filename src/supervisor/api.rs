@@ -47,15 +47,34 @@ impl Supervisor {
     pub fn new(executable: WorkerExecutable, options: Options) -> Result<Self, Error> {
         let options = options.validate()?;
         let platform = super::platform::system()?;
-        Self::from_platform(executable, options, platform)
+        Self::from_platform(executable, options, platform, None)
+    }
+    /// [`Supervisor::new`] for a host that serializes its other spawns with worker launch
+    /// (0.1.2): `guard` is taken around each worker's creation window and released after it.
+    /// See [`LaunchGuard`]. `Options` is `Copy` and has public fields, so the callback is a
+    /// separate argument rather than a field. Without a guard a supervisor behaves as 0.1.1's.
+    pub fn with_launch_guard(
+        executable: WorkerExecutable,
+        options: Options,
+        guard: LaunchGuard,
+    ) -> Result<Self, Error> {
+        let options = options.validate()?;
+        let platform = super::platform::system()?;
+        Self::from_platform(executable, options, platform, Some(guard))
     }
     pub(super) fn from_platform(
         executable: WorkerExecutable,
         options: Options,
         platform: Arc<dyn Platform>,
+        guard: Option<LaunchGuard>,
     ) -> Result<Self, Error> {
         let options = options.validate()?;
-        let context = Context::new(executable, usize::from(options.max_workers), platform);
+        let context = Context::new(
+            executable,
+            usize::from(options.max_workers),
+            platform,
+            guard,
+        );
         super::driver::start(context.clone())?;
         Ok(Self { context })
     }

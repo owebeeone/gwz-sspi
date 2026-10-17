@@ -9,6 +9,7 @@ No runtime, network, core/Git or Python dependency is introduced.
 |---|---|
 | WorkerExecutable | new(PathBuf, [u8;32]) -> Result<WorkerExecutable, Error> checks an absolute path; path() borrows it. Trusted host packaging supplies build_fingerprint. |
 | Options | max_workers: u8; Default is eight, Supervisor::new checks 1–64. |
+| LaunchGuard | Optional host callback (0.1.2) around each worker's creation window; `Supervisor::with_launch_guard`. See Architecture.md. |
 | Deadline | new(Instant), instant(); immutable, no default or round extension. |
 | Cancellation | new()/Default, Clone, cancel(), is_cancelled(); shared owned signal. |
 | Supervisor | new(executable, options); capture_caller(); start_captured(&CallerCapture, request, deadline, cancellation); start(request, deadline, cancellation); cleanup_status(RecordId); shutdown(separate_deadline). |

@@ -13,6 +13,8 @@ struct Effects {
     resume_fail: AtomicBool,
     late_cancel: AtomicBool,
     launch_fail: AtomicBool,
+    /// Whether the platform was handed the context's launch guard, once per launch.
+    guards: Mutex<Vec<bool>>,
     exited: AtomicBool,
     empty: AtomicBool,
     writes: AtomicUsize,
@@ -56,7 +58,15 @@ impl Platform for Host {
         self.effects.event("origin-capture");
         Ok(Box::new(Captured(self.effects.clone())))
     }
-    fn launch(&self, _: &WorkerExecutable, _: Box<dyn Origin>) -> Result<Launched, Error> {
+    fn launch(
+        &self,
+        _: &WorkerExecutable,
+        _: Box<dyn Origin>,
+        guard: Option<&LaunchGuard>,
+    ) -> Result<Launched, Error> {
+        self.effects.guards.lock().unwrap().push(guard.is_some());
+        // A real platform holds the guard around its creation window; this one holds it for the whole call.
+        let _held = guard.map(LaunchGuard::hold);
         self.effects.event("launch-return");
         if self.effects.launch_fail.load(Ordering::SeqCst) {
             return Err(Error::new(ErrorKind::WorkerUnavailable));
@@ -243,6 +253,9 @@ impl Drop for Output {
     }
 }
 fn host(contained: bool) -> (Arc<Context>, Arc<Effects>) {
+    host_guarded(contained, None)
+}
+fn host_guarded(contained: bool, guard: Option<LaunchGuard>) -> (Arc<Context>, Arc<Effects>) {
     let effects = Arc::new(Effects::default());
     let base = context(1);
     let executable =
@@ -259,6 +272,7 @@ fn host(contained: bool) -> (Arc<Context>, Arc<Effects>) {
             effects: effects.clone(),
             contained,
         }),
+        guard,
     );
     *effects.context.lock().unwrap() = Arc::downgrade(&context);
     (context, effects)

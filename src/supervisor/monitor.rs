@@ -63,10 +63,11 @@ pub(super) fn launch(context: &Context, record: &Record, origin: Box<dyn Origin>
         no_child(context, record, Fault::new(ErrorKind::Cancelled));
         return None;
     }
-    let launched = match origin
-        .verify()
-        .and_then(|()| context.platform.launch(&context.executable, origin))
-    {
+    let launched = match origin.verify().and_then(|()| {
+        context
+            .platform
+            .launch(&context.executable, origin, context.launch_guard.as_ref())
+    }) {
         Ok(launched) => launched,
         Err(error) => {
             no_child(context, record, Fault::from_error(error));

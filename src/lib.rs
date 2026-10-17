@@ -22,7 +22,7 @@ mod supervisor;
 
 pub use supervisor::{
     CallerCapture, Cancellation, CancellationReceipt, CleanupStatus, Conversation, Deadline,
-    Failure, Options, RecordId, ShutdownReport, Supervisor, WorkerExecutable,
+    Failure, LaunchGuard, Options, RecordId, ShutdownReport, Supervisor, WorkerExecutable,
 };
 
 mod worker;
