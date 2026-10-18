@@ -54,16 +54,27 @@ impl Options {
 /// line) inherits every handle that is inheritable at that moment. A host that makes such
 /// spawns serializes them with the window by passing the callback to
 /// [`Supervisor::with_launch_guard`]: before gwz-sspi opens the window for a worker it calls the
-/// callback, which returns an owned value, and it drops that value after the window has closed
-/// and `CreateProcessW` has returned. The host's callback takes its spawn gate and returns the
-/// hold, so the gate is held for exactly the window and the host's own spawns take it too.
+/// callback, which returns an owned value, and it drops that value after the window has closed,
+/// `CreateProcessW` has returned and the child's copies of the pipe ends are closed. The host's
+/// callback takes its spawn gate and returns the hold, so the gate is held for exactly that and
+/// the host's own spawns take it too.
 ///
 /// The callback runs on gwz-sspi's launch thread for that worker, once for each launch, and
 /// only for a launch that reaches the window (a launch refused or cancelled earlier takes
-/// none). It may block, for as long as the host's other spawns hold what it waits for; the
-/// launch waits with it, and a deadline or cancellation that falls meanwhile is acted on once
-/// the launch returns, as for any launch. It must not call back into gwz-sspi. Cloning the guard
-/// shares the callback.
+/// none). It may block, for as long as the host's other spawns hold what it waits for. The
+/// launch waits with it and its record stays charged, while the caller's `start` ends at its own
+/// deadline (or on cancellation) as for any launch. When the callback returns, the launch checks
+/// the caller's identity again and whether the record has ended meanwhile, and creates no worker
+/// if either says no. It must not call back into gwz-sspi. Cloning the guard shares the callback.
+///
+/// A guard's value is taken once and released by dropping it; the result is `#[must_use]`:
+///
+/// ```compile_fail
+/// #![deny(unused_must_use)]
+/// fn discarded(guard: &gwz_sspi::LaunchGuard) {
+///     guard.hold();
+/// }
+/// ```
 #[derive(Clone)]
 pub struct LaunchGuard(Arc<dyn Fn() -> Box<dyn Send> + Send + Sync>);
 impl LaunchGuard {
@@ -77,6 +88,7 @@ impl LaunchGuard {
     }
     /// Take the guard once, as a launch does; dropping the result releases it. A host uses this
     /// to test the callback it installs.
+    #[must_use = "dropping the held value releases the guard"]
     pub fn hold(&self) -> Box<dyn Send> {
         (self.0)()
     }

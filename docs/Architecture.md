@@ -57,7 +57,8 @@ is admitted against outstanding records.
 
 Windows new/start use synchronous token metadata probes. start retains the actual
 originating-thread handle; the charged launch owner rechecks its impersonation and
-current process primary immediately before CreateProcess. Future::poll does no
+current process primary immediately before CreateProcess (and once more after a host's launch
+guard is held, which can take as long as the host's other spawns do; see below). Future::poll does no
 metadata/provider/creation/IPC/process wait or join. A refused unregistered start
 or its Drop may synchronously dispose the captured handle outside state locks,
 without a hard OS time bound. Identity scratch is aligned, initialized, fixed and zeroizing; copied
@@ -79,17 +80,21 @@ close promptly.
 Launch guard (0.1.2). `Supervisor::with_launch_guard(executable, options, guard)` is
 `Supervisor::new` plus a host callback, `LaunchGuard`: a `Send + Sync` closure that returns an
 owned value. The launch calls it after the originating-thread recheck and before
-`InheritWindow::open`, and drops the returned value after the window has closed and
-`CreateProcessW` has returned, on every path that reaches the window (a failed call included).
-The host fills it with its spawn gate: the closure takes the gate and returns the hold, and the
-host's own spawns that name no handle list take the same gate, so none overlaps a window. The
-closure runs on the launch thread, once for each worker, and a launch refused or cancelled
-before the window takes none. It may block while the host's other spawns hold the gate; the
-launch waits with it, its record stays charged, and a deadline or cancellation that falls
-meanwhile is acted on when the launch returns. Without a guard (`Supervisor::new`) the launch is
-0.1.1's. The callback is a separate argument because `Options` is `Copy` with public fields; a
-field would break struct-literal callers. The guard does not cover a spawn by a host that does
-not take its gate, or a handle inherited some other way. Attribute memory and boxed referenced arrays survive until Delete,
+`InheritWindow::open`, and drops the returned value after the window has closed,
+`CreateProcessW` has returned and the child's copies of the pipe ends are closed, on every path
+that reaches the window (a failed call, and a failed reset of the window, included). The host
+fills it with its spawn gate: the closure takes the gate and returns the hold, and the host's own
+spawns that name no handle list take the same gate, so none overlaps a window. The closure runs on
+the launch thread, once for each worker, and a launch refused or cancelled before the window takes
+none. It may block while the host's other spawns hold the gate. The launch waits with it and its
+record stays charged, while the caller's `start` ends at its own deadline or on cancellation as for
+any launch. The wait has no bound, so when the guard is held the launch checks again that the
+caller is the same (the identity recheck above, a second time) and that the record has not ended
+(the supervisor's stop flag); a launch that fails either creates no worker and returns
+`IdentityMismatch` or `Cancelled`. Without a guard (`Supervisor::new`) the launch is 0.1.1's. The
+callback is a separate argument because `Options` is `Copy` with public fields; a field would
+break struct-literal callers. The guard does not cover a spawn by a host that does not take its
+gate, or a handle inherited some other way. Attribute memory and boxed referenced arrays survive until Delete,
 as required by [Microsoft's attribute lifetime contract](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-updateprocthreadattribute).
 [CancelSynchronousIo is advisory](https://learn.microsoft.com/en-us/windows/win32/api/ioapiset/nf-ioapiset-cancelsynchronousio);
 [ReadFile storage must remain live through completion](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-readfile).

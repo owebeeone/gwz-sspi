@@ -47,6 +47,7 @@ impl Platform for FakePlatform {
         _: &WorkerExecutable,
         _: Box<dyn Origin>,
         _: Option<&LaunchGuard>,
+        _: &std::sync::atomic::AtomicBool,
     ) -> Result<Launched, Error> {
         panic!("pure tests must not dispatch an OS launch")
     }

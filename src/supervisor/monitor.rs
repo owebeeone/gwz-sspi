@@ -64,9 +64,12 @@ pub(super) fn launch(context: &Context, record: &Record, origin: Box<dyn Origin>
         return None;
     }
     let launched = match origin.verify().and_then(|()| {
-        context
-            .platform
-            .launch(&context.executable, origin, context.launch_guard.as_ref())
+        context.platform.launch(
+            &context.executable,
+            origin,
+            context.launch_guard.as_ref(),
+            &record.stop,
+        )
     }) {
         Ok(launched) => launched,
         Err(error) => {

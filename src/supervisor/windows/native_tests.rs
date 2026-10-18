@@ -13,7 +13,13 @@ fn executable() -> WorkerExecutable {
 fn launch_fixture() -> (launch::OwnedLaunch, Primary) {
     let primary = identity::primary().unwrap();
     let origin = identity::origin(std::sync::Arc::new(identity::primary().unwrap())).unwrap();
-    let mut owned = launch::create_owned(&executable(), origin, None).unwrap();
+    let mut owned = launch::create_owned(
+        &executable(),
+        origin,
+        None,
+        &std::sync::atomic::AtomicBool::new(false),
+    )
+    .unwrap();
     assert!(owned.contained);
     owned.process.resume().unwrap();
     let frame = crate::supervisor::io::read_frame(&mut owned.reader).unwrap();

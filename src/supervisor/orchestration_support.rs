@@ -15,6 +15,8 @@ struct Effects {
     launch_fail: AtomicBool,
     /// Whether the platform was handed the context's launch guard, once per launch.
     guards: Mutex<Vec<bool>>,
+    /// The address of the stop flag the platform was handed, once per launch.
+    stops: Mutex<Vec<usize>>,
     exited: AtomicBool,
     empty: AtomicBool,
     writes: AtomicUsize,
@@ -63,8 +65,14 @@ impl Platform for Host {
         _: &WorkerExecutable,
         _: Box<dyn Origin>,
         guard: Option<&LaunchGuard>,
+        stop: &std::sync::atomic::AtomicBool,
     ) -> Result<Launched, Error> {
         self.effects.guards.lock().unwrap().push(guard.is_some());
+        self.effects
+            .stops
+            .lock()
+            .unwrap()
+            .push(stop as *const std::sync::atomic::AtomicBool as usize);
         // A real platform holds the guard around its creation window; this one holds it for the whole call.
         let _held = guard.map(LaunchGuard::hold);
         self.effects.event("launch-return");

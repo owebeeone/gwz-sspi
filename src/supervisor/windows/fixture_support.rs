@@ -129,9 +129,22 @@ fn suspended(no_kill: bool) -> Guard<Suspended, Empty> {
             )
         })
         .unwrap();
-        launch::create_in_job(&executable(), origin, job, None).unwrap()
+        launch::create_in_job(
+            &executable(),
+            origin,
+            job,
+            None,
+            &std::sync::atomic::AtomicBool::new(false),
+        )
+        .unwrap()
     } else {
-        launch::create_owned(&executable(), origin, None).unwrap()
+        launch::create_owned(
+            &executable(),
+            origin,
+            None,
+            &std::sync::atomic::AtomicBool::new(false),
+        )
+        .unwrap()
     };
     let owner = Guard::new(Suspended(Some(owned)), Empty, proof);
     assert!(owner.owner.0.as_ref().unwrap().contained);

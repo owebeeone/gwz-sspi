@@ -58,3 +58,15 @@ fn a_launch_cancelled_before_it_starts_never_takes_the_guard() {
     assert!(effects.guards.lock().unwrap().is_empty());
     assert!(log.lock().unwrap().is_empty());
 }
+#[test]
+fn the_platform_is_handed_the_records_stop_flag() {
+    // The launch rechecks the record after the wait for the guard; it can only if it holds the record's own flag.
+    let (guard, _log) = recording_guard();
+    let (context, effects) = host_guarded(true, Some(guard));
+    let (record, origin) = ticket(&context, &effects);
+    assert!(monitor::launch(&context, &record, origin).is_some());
+    assert_eq!(
+        *effects.stops.lock().unwrap(),
+        vec![&record.stop as *const std::sync::atomic::AtomicBool as usize]
+    );
+}

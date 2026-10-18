@@ -1,7 +1,7 @@
 //! Narrow owned OS ports, private to contained SSPI supervision.
 use super::values::{LaunchGuard, WorkerExecutable};
 use crate::{Error, SecretBytes};
-use std::sync::Arc;
+use std::sync::{Arc, atomic::AtomicBool};
 use std::thread::JoinHandle;
 pub(crate) struct Primary {
     pub(crate) sid: SecretBytes,
@@ -34,11 +34,15 @@ pub(super) trait Platform: Send + Sync {
     fn capture_origin(&self) -> Result<Box<dyn Origin>, Error>;
     /// Err guarantees that CreateProcess did not succeed. After success, return
     /// owned held process/Job even if containment verification refused. `guard`,
-    /// when the host gave one, is held around the creation window and no longer.
+    /// when the host gave one, is held around the creation window and until the child
+    /// pipe ends are closed. `stop` is the record's: it is set once the record has ended
+    /// (a deadline, a cancellation, a close), and a launch that finds it set after it
+    /// waited for the guard creates nothing.
     fn launch(
         &self,
         executable: &WorkerExecutable,
         origin: Box<dyn Origin>,
         guard: Option<&LaunchGuard>,
+        stop: &AtomicBool,
     ) -> Result<Launched, Error>;
 }

@@ -12,7 +12,7 @@ No runtime, network, core/Git or Python dependency is introduced.
 | LaunchGuard | Optional host callback (0.1.2) around each worker's creation window; `Supervisor::with_launch_guard`. See Architecture.md. |
 | Deadline | new(Instant), instant(); immutable, no default or round extension. |
 | Cancellation | new()/Default, Clone, cancel(), is_cancelled(); shared owned signal. |
-| Supervisor | new(executable, options); capture_caller(); start_captured(&CallerCapture, request, deadline, cancellation); start(request, deadline, cancellation); cleanup_status(RecordId); shutdown(separate_deadline). |
+| Supervisor | new(executable, options); with_launch_guard(executable, options, guard) (0.1.2); capture_caller(); start_captured(&CallerCapture, request, deadline, cancellation); start(request, deadline, cancellation); cleanup_status(RecordId); shutdown(separate_deadline). |
 | CallerCapture | Opaque owned original-thread provenance; share through Arc, scoped to its issuing Supervisor. |
 | Conversation | step(&mut self, Option<SecretBytes>); finish(self); cancel(self). |
 | RecordId | opaque context-scoped checked monotonic identity; Clone/Eq/Debug, no caller constructor. |

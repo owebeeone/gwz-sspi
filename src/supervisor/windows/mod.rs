@@ -22,8 +22,9 @@ impl Platform for System {
         executable: &WorkerExecutable,
         origin: Box<dyn Origin>,
         guard: Option<&LaunchGuard>,
+        stop: &std::sync::atomic::AtomicBool,
     ) -> Result<Launched, Error> {
-        launch::create(executable, origin, guard)
+        launch::create(executable, origin, guard, stop)
     }
 }
 pub(in crate::supervisor) fn system() -> Result<Arc<dyn Platform>, Error> {
