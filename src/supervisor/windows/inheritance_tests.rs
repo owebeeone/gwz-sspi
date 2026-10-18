@@ -109,6 +109,9 @@ struct Seen {
     event: &'static str,
     /// How many processes the Job holds: 1 once CreateProcessW has created the worker.
     created: u32,
+    /// Whether any of the worker's three ends is still open and inheritable: not when the guard is taken (the window
+    /// has not opened) and not when it is released (the window has closed and the ends are closed).
+    inheritable: bool,
     /// Whether the write end of the worker's stdout pipe has been closed by every holder, which a parent end sees as a
     /// broken pipe. (A created worker holds its own copy, so this is the failed creations' observation.)
     output_closed: bool,
@@ -148,27 +151,37 @@ fn output_closed(parent_output: usize) -> bool {
     // SAFETY: the immediate error query for PeekNamedPipe.
     peeked == 0 && unsafe { GetLastError() } == ERROR_BROKEN_PIPE
 }
-fn seen(event: &'static str, job: usize, parent_output: usize) -> Seen {
+fn ends_inheritable(ends: [usize; 3]) -> bool {
+    use windows_sys::Win32::Foundation::{GetHandleInformation, HANDLE, HANDLE_FLAG_INHERIT};
+    ends.iter().any(|end| {
+        let mut flags = 0;
+        // SAFETY: a value that is no open handle only makes the call fail, which is a closed end.
+        let open = unsafe { GetHandleInformation(*end as HANDLE, &mut flags) } != 0;
+        open && flags & HANDLE_FLAG_INHERIT != 0
+    })
+}
+fn seen(event: &'static str, job: usize, parent_output: usize, ends: [usize; 3]) -> Seen {
     Seen {
+        inheritable: ends_inheritable(ends),
         event,
         created: job_count(job),
         output_closed: output_closed(parent_output),
     }
 }
-fn observing_guard(job: usize, parent_output: usize) -> (LaunchGuard, Log) {
-    struct Released(Log, usize, usize);
+fn observing_guard(job: usize, parent_output: usize, ends: [usize; 3]) -> (LaunchGuard, Log) {
+    struct Released(Log, usize, usize, [usize; 3]);
     impl Drop for Released {
         fn drop(&mut self) {
-            let state = seen("released", self.1, self.2);
+            let state = seen("released", self.1, self.2, self.3);
             self.0.lock().unwrap().push(state);
         }
     }
     let log: Log = Arc::new(Mutex::new(Vec::new()));
     let taken = log.clone();
     let guard = LaunchGuard::new(move || {
-        let state = seen("taken", job, parent_output);
+        let state = seen("taken", job, parent_output, ends);
         taken.lock().unwrap().push(state);
-        Released(taken.clone(), job, parent_output)
+        Released(taken.clone(), job, parent_output, ends)
     });
     (guard, log)
 }
@@ -192,6 +205,16 @@ struct Launch {
     ends: launch::Ends,
     _input_parent: handles::Handle,
     output_parent: handles::Handle,
+}
+impl Launch {
+    /// The worker's three ends as raw values, for the guard to look at; the ends themselves move into the launch.
+    fn raw_ends(&self) -> [usize; 3] {
+        [
+            self.ends.input.0 as usize,
+            self.ends.output.0 as usize,
+            self.ends.stderr.0 as usize,
+        ]
+    }
 }
 fn launch_ends() -> Launch {
     let (input, input_parent) = launch::pipe().unwrap();
@@ -223,7 +246,11 @@ fn the_guard_spans_the_creation_of_the_worker() {
     // is released, so the guard is held across CreateProcessW.
     let job = new_job();
     let launch = launch_ends();
-    let (guard, log) = observing_guard(job.0 as usize, launch.output_parent.0 as usize);
+    let (guard, log) = observing_guard(
+        job.0 as usize,
+        launch.output_parent.0 as usize,
+        launch.raw_ends(),
+    );
     let executable = WorkerExecutable::new(system32("cmd.exe"), [0; 32]).unwrap();
     let (process, thread) = launch::start_and_close(
         &executable,
@@ -240,11 +267,13 @@ fn the_guard_spans_the_creation_of_the_worker() {
             Seen {
                 event: "taken",
                 created: 0,
+                inheritable: false,
                 output_closed: false
             },
             Seen {
                 event: "released",
                 created: 1,
+                inheritable: false,
                 output_closed: false
             },
         ]
@@ -260,7 +289,11 @@ fn the_guard_is_released_only_after_the_child_ends_are_closed_when_creation_fail
     // after: the guard is released with the pipe still open.)
     let job = new_job();
     let launch = launch_ends();
-    let (guard, log) = observing_guard(job.0 as usize, launch.output_parent.0 as usize);
+    let (guard, log) = observing_guard(
+        job.0 as usize,
+        launch.output_parent.0 as usize,
+        launch.raw_ends(),
+    );
     let missing = WorkerExecutable::new(system32("no such worker.exe"), [0; 32]).unwrap();
     let error = launch::start_and_close(
         &missing,
@@ -279,11 +312,13 @@ fn the_guard_is_released_only_after_the_child_ends_are_closed_when_creation_fail
             Seen {
                 event: "taken",
                 created: 0,
+                inheritable: false,
                 output_closed: false
             },
             Seen {
                 event: "released",
                 created: 0,
+                inheritable: false,
                 output_closed: true
             },
         ],
@@ -294,7 +329,11 @@ fn the_guard_is_released_only_after_the_child_ends_are_closed_when_creation_fail
 fn a_launch_refused_before_the_window_never_takes_the_guard() {
     let job = new_job();
     let launch = launch_ends();
-    let (guard, log) = observing_guard(job.0 as usize, launch.output_parent.0 as usize);
+    let (guard, log) = observing_guard(
+        job.0 as usize,
+        launch.output_parent.0 as usize,
+        launch.raw_ends(),
+    );
     let executable = WorkerExecutable::new(system32("cmd.exe"), [0; 32]).unwrap();
     let error = launch::start_and_close(
         &executable,
@@ -318,7 +357,11 @@ fn a_caller_that_changes_while_the_guard_is_held_creates_no_worker() {
     // draft: the worker would be created for a caller that is no longer the one that asked.
     let job = new_job();
     let launch = launch_ends();
-    let (guard, log) = observing_guard(job.0 as usize, launch.output_parent.0 as usize);
+    let (guard, log) = observing_guard(
+        job.0 as usize,
+        launch.output_parent.0 as usize,
+        launch.raw_ends(),
+    );
     let executable = WorkerExecutable::new(system32("cmd.exe"), [0; 32]).unwrap();
     let error = launch::start_and_close(
         &executable,
@@ -337,11 +380,13 @@ fn a_caller_that_changes_while_the_guard_is_held_creates_no_worker() {
             Seen {
                 event: "taken",
                 created: 0,
+                inheritable: false,
                 output_closed: false
             },
             Seen {
                 event: "released",
                 created: 0,
+                inheritable: false,
                 output_closed: true
             },
         ]
@@ -355,7 +400,11 @@ fn a_record_that_ends_while_the_guard_is_held_creates_no_worker() {
     let job = new_job();
     let launch = launch_ends();
     let stop = Arc::new(AtomicBool::new(false));
-    let (inner, log) = observing_guard(job.0 as usize, launch.output_parent.0 as usize);
+    let (inner, log) = observing_guard(
+        job.0 as usize,
+        launch.output_parent.0 as usize,
+        launch.raw_ends(),
+    );
     let blocked = stop.clone();
     let guard = LaunchGuard::new(move || {
         let held = inner.hold();
